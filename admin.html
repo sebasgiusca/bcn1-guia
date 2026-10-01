@@ -72,7 +72,7 @@
 <body>
 <header>
   <h1>🚛 Tom-Yard · Panel BCN1</h1>
-  <div class="v2" id="v2Box" style="display:none">Salida de camiones: <button type="button" id="v2Btn">…</button></div>
+  <div class="v2" id="v2Box" style="display:none">Salida de camiones por: <button type="button" id="v2Btn">…</button></div>
   <div class="meta" id="meta">—</div>
 </header>
 <main>
@@ -380,12 +380,12 @@ function renderV2() {
   if (v2Ocupado) return;
   const on = !!CFG.salidaV2;
   b.className = on ? 'on' : '';
-  b.textContent = on ? '🅿 por V2 (garita 2)' : '⬇ por puerta sur (normal)';
-  b.title = on ? 'Ahora mismo la guía manda a los camiones a salir por V2. Pulsa para volver a la puerta sur.' : 'Salida normal por la puerta sur. Pulsa para mandar a todos a salir por V2.';
+  b.textContent = on ? 'V2' : 'V0';
+  b.title = on ? 'Ahora mismo la guía manda a los camiones a salir por V2. Pulsa para volver a V0.' : 'Salida normal por V0. Pulsa para mandar a todos a salir por V2.';
 }
 async function toggleV2() {
   const on = !!CFG.salidaV2;
-  const msg = on ? '¿Volver a la salida NORMAL por la puerta sur?' : '¿Mandar a TODOS los camiones a salir por V2 (garita 2)?\n\nLa guía del conductor cambia en menos de 15 segundos.';
+  const msg = on ? '¿Volver a la salida normal por V0?' : '¿Mandar a TODOS los camiones a salir por V2?\n\nLa guía del conductor cambia en menos de 15 segundos.';
   if (!confirm(msg)) return;
   v2Ocupado = true; const b = document.getElementById('v2Btn'); b.disabled = true; b.textContent = '…';
   try {
