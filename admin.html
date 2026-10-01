@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tom-Yard · Panel BCN1</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; font-family: "Amazon Ember", Arial, sans-serif; background: #131A22; color: #fff; }
@@ -11,26 +13,35 @@
   header h1 { margin: 0; font-size: 18px; }
   header .meta { font-size: 12px; color: #0F1111; }
   main { padding: 16px; max-width: 1200px; margin: 0 auto; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .tab { background: #232F3E; color: #c7d0dc; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; position: relative; }
+  .tab.on { background: #ff9900; color: #0F1111; }
+  .tab .badge { position: absolute; top: -6px; right: -6px; background: #c7254e; color: #fff; border-radius: 999px; font-size: 11px; padding: 2px 7px; display: none; }
+  .tab .badge.show { display: inline-block; }
+  .tab .badge.urg { animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .3; } }
+  .sec { display: none; } .sec.on { display: block; }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
   .card { background: #232F3E; border-radius: 10px; padding: 12px; text-align: center; }
   .card .n { font-size: 30px; font-weight: 800; color: #ff9900; }
   .card .l { font-size: 12px; color: #c7d0dc; }
   table { width: 100%; border-collapse: collapse; background: #232F3E; border-radius: 10px; overflow: hidden; }
-  th, td { padding: 9px 10px; text-align: left; font-size: 13px; border-bottom: 1px solid #37475A; white-space: nowrap; }
-  th { background: #37475A; color: #fff; font-weight: 600; position: sticky; top: 0; }
+  th, td { padding: 9px 10px; text-align: left; font-size: 13px; border-bottom: 1px solid #37475A; vertical-align: top; }
+  th { background: #37475A; color: #fff; font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
   tr:hover td { background: #2b3a4d; }
-  .vr { font-family: monospace; font-weight: 700; font-size: 14px; }
-  .fase { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .vr { font-family: monospace; font-weight: 700; font-size: 14px; white-space: nowrap; }
+  .fase { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
   .f0 { background: #37475A; } .f1 { background: #0B3D2E; color: #3DDC97; } .f2 { background: #FA8900; color: #0F1111; } .f3 { background: #00A8E1; color: #0F1111; }
   .bar { width: 110px; height: 10px; background: #37475A; border-radius: 5px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
   .bar i { display: block; height: 100%; background: #3DDC97; }
-  .old { color: #8a97a8; }
+  .old { color: #8a97a8; white-space: nowrap; }
   .stale td { opacity: .55; }
   button { border: none; border-radius: 6px; padding: 5px 9px; cursor: pointer; font-size: 12px; font-weight: 600; }
   .b-call { background: #ff9900; color: #0F1111; } .b-del { background: #37475A; color: #fff; margin-left: 6px; }
   .b-call:disabled { background: #067D62; color: #fff; cursor: default; }
   .b-wait { background: #d9480f; color: #fff; }
   .b-undo { background: #37475A; color: #ffb366; margin-left: 6px; }
+  .b-ok { background: #067D62; color: #fff; padding: 8px 14px; font-size: 13px; }
   .key { background: #232F3E; padding: 20px; border-radius: 10px; max-width: 460px; margin: 40px auto; }
   .key input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #37475A; background: #0F1111; color: #fff; margin: 10px 0; font-size: 14px; }
   .key button { background: #ff9900; color: #0F1111; padding: 10px 16px; font-size: 14px; }
@@ -38,11 +49,30 @@
   a.guide { color: #00A8E1; text-decoration: none; font-size: 12px; margin-left: 6px; }
   .filters { margin-bottom: 10px; font-size: 13px; color: #c7d0dc; }
   .filters label { margin-right: 14px; cursor: pointer; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #55606e; margin-right: 6px; vertical-align: middle; }
+  .dot.on { background: #3DDC97; box-shadow: 0 0 6px #3DDC97; }
+  .lvl { display: inline-block; padding: 4px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; white-space: nowrap; }
+  .lvl.leve { background: #0B3D2E; color: #3DDC97; } .lvl.moderado { background: #FA8900; color: #0F1111; } .lvl.urgente { background: #c7254e; color: #fff; }
+  tr.urgente td { background: #3a1420; } tr.resuelto td { opacity: .5; }
+  .face { font-size: 22px; }
+  .comment { white-space: pre-wrap; max-width: 520px; color: #e6ebf1; }
+  .hint { font-size: 12px; color: #8a97a8; margin: 6px 0 12px; }
+  .lang { font-size: 11px; background: #37475A; border-radius: 4px; padding: 1px 5px; text-transform: uppercase; }
+  .v2 { display: flex; align-items: center; gap: 8px; background: #0F1111; color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
+  .v2 button { background: #37475A; color: #fff; padding: 6px 12px; border-radius: 999px; font-size: 13px; }
+  .v2 button.on { background: #3DDC97; color: #0F1111; }
+  .v2 button:disabled { opacity: .6; cursor: wait; }
+  #trackMap { height: 480px; border-radius: 10px; background: #0F1111; margin-top: 10px; }
+  .trk-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: #c7d0dc; }
+  .trk-bar select { background: #0F1111; color: #fff; border: 1px solid #37475A; border-radius: 6px; padding: 7px 10px; font-size: 14px; font-family: monospace; }
+  .trk-info { font-size: 13px; color: #c7d0dc; margin-top: 8px; }
+  .leaflet-container { font-family: inherit; }
 </style>
 </head>
 <body>
 <header>
   <h1>🚛 Tom-Yard · Panel BCN1</h1>
+  <div class="v2" id="v2Box" style="display:none">Salida de camiones: <button type="button" id="v2Btn">…</button></div>
   <div class="meta" id="meta">—</div>
 </header>
 <main>
@@ -55,23 +85,92 @@
   </div>
 
   <div id="panel" style="display:none">
-    <div class="cards">
-      <div class="card"><div class="n" id="cTotal">0</div><div class="l">VRIDs activos (24 h)</div></div>
-      <div class="card"><div class="n" id="cMuelle">0</div><div class="l">En muelle / sin empezar</div></div>
-      <div class="card"><div class="n" id="cSala">0</div><div class="l">Cargando / en sala</div></div>
-      <div class="card"><div class="n" id="cLlamados">0</div><div class="l">Llamados</div></div>
+    <div class="tabs">
+      <button class="tab on" data-sec="asist">🆘 Asistencia <span class="badge" id="bAsist">0</span></button>
+      <button class="tab" data-sec="uso">📱 Uso de la guía</button>
+      <button class="tab" data-sec="fb">⭐ Valoraciones y propuestas <span class="badge" id="bFb">0</span></button>
+      <button class="tab" data-sec="trucks">🚛 Camiones</button>
+      <button class="tab" data-sec="track">📍 Recorrido</button>
     </div>
-    <div class="filters">
-      <label><input type="checkbox" id="fOld"> Mostrar también antiguos (&gt; 24 h)</label>
-      <span id="lastRefresh"></span>
-    </div>
-    <table>
-      <thead><tr>
-        <th>VRID</th><th>Fase</th><th>Muelle</th><th>Carga</th><th>Estado ODM</th><th>Salida prog.</th><th>Llamado</th><th>Última act.</th><th></th>
+
+    <!-- ASISTENCIA -->
+    <section class="sec on" id="sec-asist">
+      <div class="cards">
+        <div class="card"><div class="n" id="aUrg" style="color:#ff6b6b">0</div><div class="l">Urgentes sin atender</div></div>
+        <div class="card"><div class="n" id="aMod">0</div><div class="l">Moderados sin atender</div></div>
+        <div class="card"><div class="n" id="aLev" style="color:#3DDC97">0</div><div class="l">Leves sin atender</div></div>
+        <div class="card"><div class="n" id="aHoy">0</div><div class="l">Avisos hoy</div></div>
+      </div>
+      <div class="filters"><label><input type="checkbox" id="aOld"> Mostrar también los ya atendidos</label></div>
+      <table><thead><tr><th>Nivel</th><th>VRID</th><th>Muelle</th><th>Nota del conductor</th><th>Hace</th><th>Idioma</th><th></th></tr></thead>
+      <tbody id="tbAsist"></tbody></table>
+      <div class="empty" id="eAsist" style="display:none">Ningún aviso de asistencia pendiente.</div>
+    </section>
+
+    <!-- USO -->
+    <section class="sec" id="sec-uso">
+      <div class="cards">
+        <div class="card"><div class="n" id="uOn">0</div><div class="l">Guía abierta ahora</div></div>
+        <div class="card"><div class="n" id="uHoy">0</div><div class="l">Conductores hoy</div></div>
+        <div class="card"><div class="n" id="u7">0</div><div class="l">Últimos 7 días</div></div>
+        <div class="card"><div class="n" id="uPct">—</div><div class="l">% camiones (24 h) que abrieron la guía</div></div>
+      </div>
+      <div class="hint">Un conductor cuenta como "usuario" cuando abre la guía con su QR y acepta las normas. Punto verde = guía abierta en los últimos 90 s.</div>
+      <div class="filters"><label><input type="checkbox" id="uOld"> Mostrar más de 7 días</label> <span id="uLangs"></span></div>
+      <table><thead><tr><th></th><th>VRID</th><th>Primera apertura</th><th>Última actividad</th><th>Fase alcanzada</th><th>Idioma</th><th>Valoró</th><th>Pidió ayuda</th></tr></thead>
+      <tbody id="tbUso"></tbody></table>
+      <div class="empty" id="eUso" style="display:none">Todavía ningún conductor ha abierto la guía.</div>
+    </section>
+
+    <!-- VALORACIONES -->
+    <section class="sec" id="sec-fb">
+      <div class="cards">
+        <div class="card"><div class="n" id="fN">0</div><div class="l">Valoraciones</div></div>
+        <div class="card"><div class="n" id="fMedia">—</div><div class="l">Media (1 = mal, 3 = bien)</div></div>
+        <div class="card"><div class="n" id="fCaras">—</div><div class="l">😕 / 😐 / 😊</div></div>
+        <div class="card"><div class="n" id="fProp">0</div><div class="l">Con propuesta escrita</div></div>
+      </div>
+      <div class="filters"><label><input type="checkbox" id="fSolo"> Solo las que traen comentario / propuesta</label></div>
+      <table><thead><tr><th></th><th>VRID</th><th>Comentario / propuesta</th><th>Fecha</th><th>Idioma</th><th></th></tr></thead>
+      <tbody id="tbFb"></tbody></table>
+      <div class="empty" id="eFb" style="display:none">Sin valoraciones todavía. La caja aparece al conductor cuando llega a la fase "Llaves".</div>
+    </section>
+
+    <!-- CAMIONES -->
+    <section class="sec" id="sec-trucks">
+      <div class="cards">
+        <div class="card"><div class="n" id="cTotal">0</div><div class="l">VRIDs activos (24 h)</div></div>
+        <div class="card"><div class="n" id="cMuelle">0</div><div class="l">En muelle / sin empezar</div></div>
+        <div class="card"><div class="n" id="cSala">0</div><div class="l">Cargando / en sala</div></div>
+        <div class="card"><div class="n" id="cLlamados">0</div><div class="l">Llamados</div></div>
+      </div>
+      <div class="filters"><label><input type="checkbox" id="fOld"> Mostrar también antiguos (&gt; 24 h)</label></div>
+      <table><thead><tr>
+        <th></th><th>VRID</th><th>Fase</th><th>Muelle</th><th>Carga</th><th>Estado ODM</th><th>Salida prog.</th><th>Llamado</th><th>Última act.</th><th></th>
       </tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    <div class="empty" id="empty" style="display:none">Sin datos todavía. Abre ODM con el userscript Tom-Yard instalado.</div>
+      <tbody id="tbody"></tbody></table>
+      <div class="empty" id="empty" style="display:none">Sin datos todavía. Abre ODM con el userscript Tom-Yard instalado.</div>
+    </section>
+
+    <!-- RECORRIDO -->
+    <section class="sec" id="sec-track">
+      <div class="cards">
+        <div class="card"><div class="n" id="tN">0</div><div class="l">Conductores con recorrido</div></div>
+        <div class="card"><div class="n" id="tHoy">0</div><div class="l">Recorridos hoy</div></div>
+        <div class="card"><div class="n" id="tPts">0</div><div class="l">Puntos del recorrido elegido</div></div>
+        <div class="card"><div class="n" id="tDur">—</div><div class="l">Duración</div></div>
+      </div>
+      <div class="hint">Solo se guarda la posición de los conductores que aceptaron compartirla, y solo mientras están dentro del recinto. Los recorridos de más de 7 días se borran solos al abrir esta pestaña.</div>
+      <div class="trk-bar">
+        <label>VRID: <select id="trkSel"></select></label>
+        <button class="b-ok" id="trkRefresh" type="button">↻ Actualizar</button>
+        <label><input type="checkbox" id="trkLive" checked> Seguir en vivo (10 s)</label>
+        <button class="b-del" id="trkDel" type="button">🗑 Borrar este recorrido</button>
+      </div>
+      <div id="trackMap"></div>
+      <div class="trk-info" id="trkInfo"></div>
+      <div class="empty" id="eTrack" style="display:none">Ningún conductor ha compartido todavía su posición.</div>
+    </section>
   </div>
 </main>
 
@@ -79,8 +178,13 @@
 const DB = 'https://tom-yard-default-rtdb.europe-west1.firebasedatabase.app';
 const GUIDE = 'https://sebasgiusca.github.io/bcn1-guia/';
 const MAX_EDAD_ACTIVO = 24 * 60 * 60 * 1000;
+const DIA = 24 * 60 * 60 * 1000;
+const PRESENCIA_ON_MS = 90 * 1000;
 let key = localStorage.getItem('tomyard_admin_key') || '';
 let timer = null;
+let D = { trucks: {}, presence: {}, feedback: {}, assist: {} };
+let CFG = {};
+let urgentesAvisados = new Set();
 
 function fase(d) {
   if (!d) return 0;
@@ -91,6 +195,7 @@ function fase(d) {
   return 1;
 }
 const FASE_TXT = ['Garita', 'Muelle', 'Sala de espera', 'Llamado'];
+const FASE_GUIA = ['Garita', 'Muelle', 'Sala de espera', 'Llaves'];
 
 function hace(ts) {
   if (!ts) return '—';
@@ -102,26 +207,267 @@ function hace(ts) {
   if (h < 48) return `hace ${h} h ${m % 60} min`;
   return `hace ${Math.floor(h / 24)} d`;
 }
-function hora(ts) {
-  if (!ts) return '—';
-  const d = new Date(ts);
-  return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-}
+function hora(ts) { return ts ? new Date(ts).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '—'; }
+function fecha(ts) { return ts ? new Date(ts).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function esHoy(ts) { return ts && new Date(ts).toDateString() === new Date().toDateString(); }
+function online(vr) { const p = D.presence[vr]; return !!(p && p.ts && Date.now() - p.ts < PRESENCIA_ON_MS); }
+function dot(vr) { const p = D.presence[vr]; return `<span class="dot ${online(vr) ? 'on' : ''}" title="${p ? 'Guía abierta ' + hace(p.ts) : 'Nunca abrió la guía'}"></span>`; }
+function guiaLink(vr) { return `<span class="vr">${esc(vr)}</span><a class="guide" href="${GUIDE}?vr=${encodeURIComponent(vr)}" target="_blank" title="Abrir guía del conductor">guía ↗</a>`; }
 
+async function get(path) {
+  const r = await fetch(`${DB}/${path}.json?auth=${encodeURIComponent(key)}`, { cache: 'no-store' });
+  if (r.status === 401 || r.status === 403) throw new Error('auth');
+  return (await r.json()) || {};
+}
 async function cargar() {
-  let all;
   try {
-    const r = await fetch(`${DB}/trucks.json?auth=${encodeURIComponent(key)}`, { cache: 'no-store' });
-    if (r.status === 401 || r.status === 403) { salir('Clave incorrecta'); return; }
-    all = await r.json();
+    const [trucks, presence, feedback, assist, cfg] = await Promise.all([get('trucks'), get('presence'), get('feedback'), get('assist'), get('config')]);
+    D = { trucks, presence, feedback, assist }; CFG = cfg || {};
   } catch (e) {
+    if (e.message === 'auth') { salir('Clave incorrecta'); return; }
     document.getElementById('meta').textContent = 'Error de red, reintentando…';
     return;
   }
-  render(all || {});
+  renderTodo();
+}
+function renderTodo() {
+  renderAsist(); renderUso(); renderFb(); render(D.trucks); renderV2();
+  if (document.getElementById('sec-track').classList.contains('on')) cargarTrack();
+  document.getElementById('meta').textContent = `Actualizado ${new Date().toLocaleTimeString('es-ES')} · se refresca cada 15 s`;
 }
 
+/* ===== ASISTENCIA ===== */
+const LVL_ORD = { urgente: 0, moderado: 1, leve: 2 };
+const LVL_TXT = { urgente: '🔴 Urgente', moderado: '🟠 Moderado', leve: '🟢 Leve' };
+function renderAsist() {
+  const verViejos = document.getElementById('aOld').checked;
+  const filas = Object.keys(D.assist).map(vr => ({ vr, ...D.assist[vr] }))
+    .filter(a => verViejos || !a.resolved)
+    .sort((a, b) => (a.resolved - b.resolved) || (LVL_ORD[a.level] ?? 9) - (LVL_ORD[b.level] ?? 9) || (b.ts || 0) - (a.ts || 0));
+  const pend = filas.filter(a => !a.resolved);
+  const urg = pend.filter(a => a.level === 'urgente').length;
+  document.getElementById('aUrg').textContent = urg;
+  document.getElementById('aMod').textContent = pend.filter(a => a.level === 'moderado').length;
+  document.getElementById('aLev').textContent = pend.filter(a => a.level === 'leve').length;
+  document.getElementById('aHoy').textContent = Object.values(D.assist).filter(a => esHoy(a.ts)).length;
+  const badge = document.getElementById('bAsist');
+  const nPend = Object.values(D.assist).filter(a => !a.resolved).length;
+  badge.textContent = nPend; badge.classList.toggle('show', nPend > 0); badge.classList.toggle('urg', urg > 0);
+  document.title = (nPend ? `(${nPend}) ` : '') + 'Tom-Yard · Panel BCN1';
+
+  // sonido para urgentes nuevos
+  Object.keys(D.assist).forEach(vr => {
+    const a = D.assist[vr];
+    if (a.level === 'urgente' && !a.resolved && !urgentesAvisados.has(vr + a.ts)) { urgentesAvisados.add(vr + a.ts); pitido(); }
+  });
+
+  const tb = document.getElementById('tbAsist'); tb.innerHTML = '';
+  document.getElementById('eAsist').style.display = filas.length ? 'none' : 'block';
+  filas.forEach(a => {
+    const tr = document.createElement('tr');
+    tr.className = a.resolved ? 'resuelto' : (a.level === 'urgente' ? 'urgente' : '');
+    tr.innerHTML = `
+      <td><span class="lvl ${esc(a.level)}">${LVL_TXT[a.level] || esc(a.level)}</span></td>
+      <td>${dot(a.vr)}${guiaLink(a.vr)}</td>
+      <td>${esc(a.door || (D.trucks[a.vr] && D.trucks[a.vr].door) || '—')}</td>
+      <td class="comment">${esc(a.note || '—')}</td>
+      <td class="old" title="${a.ts ? new Date(a.ts).toLocaleString('es-ES') : ''}">${hace(a.ts)}${a.resolved ? `<br>atendido ${hora(a.resolvedTs)}` : ''}</td>
+      <td><span class="lang">${esc(a.lang || '')}</span></td>
+      <td>${a.resolved ? `<button class="b-del" data-act="delAsist" data-vr="${esc(a.vr)}" title="Borrar">🗑</button>` : `<button class="b-ok" data-act="atendido" data-vr="${esc(a.vr)}">✓ Atendido</button>`}</td>`;
+    tb.appendChild(tr);
+  });
+}
+async function atendido(vr) {
+  await fetch(`${DB}/assist/${encodeURIComponent(vr)}.json?auth=${encodeURIComponent(key)}`, {
+    method: 'PATCH', body: JSON.stringify({ resolved: true, resolvedTs: Date.now() })
+  }).catch(() => {});
+  cargar();
+}
+async function borrarAsist(vr) {
+  await fetch(`${DB}/assist/${encodeURIComponent(vr)}.json?auth=${encodeURIComponent(key)}`, { method: 'DELETE' }).catch(() => {});
+  cargar();
+}
+function pitido() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.25, 0.5].forEach(t => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square'; o.frequency.value = 880; g.gain.value = 0.15;
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.18);
+    });
+  } catch (e) {}
+}
+
+/* ===== USO ===== */
+function renderUso() {
+  const ahora = Date.now();
+  const verViejos = document.getElementById('uOld').checked;
+  const filas = Object.keys(D.presence).map(vr => ({ vr, ...D.presence[vr] }))
+    .filter(p => verViejos || (p.ts && ahora - p.ts <= 7 * DIA))
+    .sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const all = Object.values(D.presence);
+  document.getElementById('uOn').textContent = all.filter(p => p.ts && ahora - p.ts < PRESENCIA_ON_MS).length;
+  document.getElementById('uHoy').textContent = all.filter(p => esHoy(p.ts) || esHoy(p.firstTs)).length;
+  document.getElementById('u7').textContent = all.filter(p => p.ts && ahora - p.ts <= 7 * DIA).length;
+  const trucks24 = Object.keys(D.trucks).filter(vr => D.trucks[vr].ts && ahora - D.trucks[vr].ts <= DIA);
+  const conGuia = trucks24.filter(vr => D.presence[vr]).length;
+  document.getElementById('uPct').textContent = trucks24.length ? `${Math.round(100 * conGuia / trucks24.length)}% (${conGuia}/${trucks24.length})` : '—';
+  const langs = {};
+  all.forEach(p => { if (p.lang) langs[p.lang] = (langs[p.lang] || 0) + 1; });
+  document.getElementById('uLangs').textContent = 'Idiomas: ' + (Object.keys(langs).sort((a, b) => langs[b] - langs[a]).map(l => `${l.toUpperCase()} ${langs[l]}`).join(' · ') || '—');
+
+  const tb = document.getElementById('tbUso'); tb.innerHTML = '';
+  document.getElementById('eUso').style.display = filas.length ? 'none' : 'block';
+  filas.forEach(p => {
+    const fb = D.feedback[p.vr], as = D.assist[p.vr];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${dot(p.vr)}</td>
+      <td>${guiaLink(p.vr)}</td>
+      <td class="old">${fecha(p.firstTs)}</td>
+      <td class="old" title="${p.ts ? new Date(p.ts).toLocaleString('es-ES') : ''}">${hace(p.ts)}</td>
+      <td><span class="fase f${p.fase || 0}">${FASE_GUIA[p.fase || 0]}</span></td>
+      <td><span class="lang">${esc(p.lang || '')}</span></td>
+      <td>${fb ? `<span class="face">${['', '😕', '😐', '😊'][fb.rating] || ''}</span>` : '—'}</td>
+      <td>${as ? `<span class="lvl ${esc(as.level)}">${esc(as.level)}</span>${as.resolved ? ' ✓' : ''}` : '—'}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ===== VALORACIONES ===== */
+let fbVistas = Number(localStorage.getItem('tomyard_fb_vistas') || 0);
+function renderFb() {
+  const solo = document.getElementById('fSolo').checked;
+  const all = Object.keys(D.feedback).map(vr => ({ vr, ...D.feedback[vr] })).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const filas = all.filter(f => !solo || f.comment);
+  document.getElementById('fN').textContent = all.length;
+  const media = all.length ? (all.reduce((s, f) => s + (f.rating || 0), 0) / all.length) : null;
+  document.getElementById('fMedia').textContent = media === null ? '—' : media.toFixed(2);
+  document.getElementById('fCaras').textContent = all.length ? [1, 2, 3].map(r => all.filter(f => f.rating === r).length).join(' / ') : '—';
+  document.getElementById('fProp').textContent = all.filter(f => f.comment).length;
+  const nuevas = Math.max(0, all.length - fbVistas);
+  const badge = document.getElementById('bFb');
+  badge.textContent = nuevas; badge.classList.toggle('show', nuevas > 0);
+  if (document.getElementById('sec-fb').classList.contains('on')) { fbVistas = all.length; localStorage.setItem('tomyard_fb_vistas', fbVistas); badge.classList.remove('show'); }
+
+  const tb = document.getElementById('tbFb'); tb.innerHTML = '';
+  document.getElementById('eFb').style.display = filas.length ? 'none' : 'block';
+  filas.forEach(f => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="face" title="${f.rating}/3">${['', '😕', '😐', '😊'][f.rating] || '—'}</span></td>
+      <td>${guiaLink(f.vr)}</td>
+      <td class="comment">${f.comment ? esc(f.comment) : '<span class="old">sin comentario</span>'}</td>
+      <td class="old">${fecha(f.ts)}</td>
+      <td><span class="lang">${esc(f.lang || '')}</span></td>
+      <td><button class="b-del" data-act="delFb" data-vr="${esc(f.vr)}" title="Borrar">🗑</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+async function borrarFb(vr) {
+  if (!confirm(`¿Borrar la valoración de ${vr}?`)) return;
+  await fetch(`${DB}/feedback/${encodeURIComponent(vr)}.json?auth=${encodeURIComponent(key)}`, { method: 'DELETE' }).catch(() => {});
+  cargar();
+}
+
+/* ===== SALIDA V2 ===== */
+let v2Ocupado = false;
+function renderV2() {
+  const box = document.getElementById('v2Box'), b = document.getElementById('v2Btn');
+  box.style.display = 'flex';
+  if (v2Ocupado) return;
+  const on = !!CFG.salidaV2;
+  b.className = on ? 'on' : '';
+  b.textContent = on ? '🅿 por V2 (garita 2)' : '⬇ por puerta sur (normal)';
+  b.title = on ? 'Ahora mismo la guía manda a los camiones a salir por V2. Pulsa para volver a la puerta sur.' : 'Salida normal por la puerta sur. Pulsa para mandar a todos a salir por V2.';
+}
+async function toggleV2() {
+  const on = !!CFG.salidaV2;
+  const msg = on ? '¿Volver a la salida NORMAL por la puerta sur?' : '¿Mandar a TODOS los camiones a salir por V2 (garita 2)?\n\nLa guía del conductor cambia en menos de 15 segundos.';
+  if (!confirm(msg)) return;
+  v2Ocupado = true; const b = document.getElementById('v2Btn'); b.disabled = true; b.textContent = '…';
+  try {
+    const r = await fetch(`${DB}/config/salidaV2.json?auth=${encodeURIComponent(key)}`, { method: 'PUT', body: JSON.stringify(!on) });
+    if (!r.ok) throw new Error(r.status);
+    CFG.salidaV2 = !on;
+  } catch (e) { alert('No se ha podido cambiar la salida (' + e.message + ')'); }
+  v2Ocupado = false; b.disabled = false; renderV2();
+}
+document.getElementById('v2Btn').addEventListener('click', toggleV2);
+
+/* ===== RECORRIDO ===== */
+const TRACK_RETENCION = 7 * DIA;
+let trkMap = null, trkLayer = null, trkTimer = null, trkData = {}, trkSel = '';
+function trkInit() {
+  if (trkMap) return;
+  trkMap = L.map('trackMap', { zoomControl: true }).setView([41.3143, 2.0755], 17);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20, attribution: 'Esri World Imagery' }).addTo(trkMap);
+  trkLayer = L.layerGroup().addTo(trkMap);
+}
+async function cargarTrack() {
+  let all;
+  try { all = await get('track'); } catch (e) { return; }
+  const ahora = Date.now();
+  // purga: recorridos cuyo ultimo punto tiene mas de 7 dias
+  for (const vr of Object.keys(all)) {
+    const pts = Object.values(all[vr] || {});
+    const ult = Math.max(0, ...pts.map(p => p.ts || 0));
+    if (!pts.length || ahora - ult > TRACK_RETENCION) {
+      fetch(`${DB}/track/${encodeURIComponent(vr)}.json?auth=${encodeURIComponent(key)}`, { method: 'DELETE' }).catch(() => {});
+      delete all[vr];
+    }
+  }
+  trkData = all;
+  renderTrack();
+}
+function trkPuntos(vr) {
+  return Object.values(trkData[vr] || {}).filter(p => typeof p.lat === 'number' && typeof p.lon === 'number').sort((a, b) => (a.ts || 0) - (b.ts || 0));
+}
+function renderTrack() {
+  const vrs = Object.keys(trkData).sort((a, b) => Math.max(...trkPuntos(b).map(p => p.ts || 0)) - Math.max(...trkPuntos(a).map(p => p.ts || 0)));
+  document.getElementById('tN').textContent = vrs.length;
+  document.getElementById('tHoy').textContent = vrs.filter(vr => trkPuntos(vr).some(p => esHoy(p.ts))).length;
+  document.getElementById('eTrack').style.display = vrs.length ? 'none' : 'block';
+  const sel = document.getElementById('trkSel');
+  if (!vrs.includes(trkSel)) trkSel = vrs[0] || '';
+  sel.innerHTML = vrs.map(vr => { const pts = trkPuntos(vr); return `<option value="${esc(vr)}" ${vr === trkSel ? 'selected' : ''}>${esc(vr)} · ${pts.length} pts · ${hace(pts[pts.length - 1]?.ts)}</option>`; }).join('');
+  trkInit();
+  trkLayer.clearLayers();
+  const pts = trkPuntos(trkSel);
+  document.getElementById('tPts').textContent = pts.length;
+  if (!pts.length) { document.getElementById('tDur').textContent = '—'; document.getElementById('trkInfo').textContent = ''; return; }
+  const ini = pts[0].ts, fin = pts[pts.length - 1].ts;
+  const min = Math.round((fin - ini) / 60000);
+  document.getElementById('tDur').textContent = min < 60 ? `${min} min` : `${Math.floor(min / 60)} h ${min % 60} min`;
+  const latlngs = pts.map(p => [p.lat, p.lon]);
+  L.polyline(latlngs, { color: '#00A8E1', weight: 4, opacity: .9 }).addTo(trkLayer);
+  pts.forEach((p, i) => {
+    L.circleMarker([p.lat, p.lon], { radius: 3, color: '#fff', weight: 1, fillColor: '#00A8E1', fillOpacity: .9 })
+      .bindTooltip(`${hora(p.ts)} · ±${Math.round(p.acc || 0)} m`).addTo(trkLayer);
+  });
+  L.circleMarker(latlngs[0], { radius: 8, color: '#fff', weight: 2, fillColor: '#3DDC97', fillOpacity: 1 }).bindTooltip(`Inicio ${hora(ini)}`).addTo(trkLayer);
+  L.circleMarker(latlngs[latlngs.length - 1], { radius: 8, color: '#fff', weight: 2, fillColor: '#ff9900', fillOpacity: 1 }).bindTooltip(`Último ${hora(fin)}`).addTo(trkLayer);
+  trkMap.fitBounds(L.latLngBounds(latlngs).pad(0.15));
+  const d = D.trucks[trkSel] || {};
+  document.getElementById('trkInfo').innerHTML = `${guiaLink(trkSel)} · inicio ${fecha(ini)} · último punto ${hace(fin)} · muelle ${esc(d.door || '—')} · fase <span class="fase f${fase(d)}">${FASE_TXT[fase(d)]}</span>`;
+}
+async function borrarTrack() {
+  if (!trkSel || !confirm(`¿Borrar el recorrido de ${trkSel}?`)) return;
+  await fetch(`${DB}/track/${encodeURIComponent(trkSel)}.json?auth=${encodeURIComponent(key)}`, { method: 'DELETE' }).catch(() => {});
+  cargarTrack();
+}
+document.getElementById('trkSel').addEventListener('change', e => { trkSel = e.target.value; renderTrack(); });
+document.getElementById('trkRefresh').addEventListener('click', cargarTrack);
+document.getElementById('trkDel').addEventListener('click', borrarTrack);
+document.getElementById('trkLive').addEventListener('change', trkLiveTimer);
+function trkLiveTimer() {
+  clearInterval(trkTimer); trkTimer = null;
+  if (document.getElementById('trkLive').checked && document.getElementById('sec-track').classList.contains('on')) trkTimer = setInterval(cargarTrack, 10000);
+}
+
+/* ===== CAMIONES ===== */
 function render(all) {
   ultimoAll = all;
   const mostrarViejos = document.getElementById('fOld').checked;
@@ -146,7 +492,8 @@ function render(all) {
     const tr = document.createElement('tr');
     if (stale) tr.className = 'stale';
     tr.innerHTML = `
-      <td><span class="vr">${esc(d.vr)}</span><a class="guide" href="${GUIDE}?vr=${encodeURIComponent(d.vr)}" target="_blank" title="Abrir guía del conductor">guía ↗</a></td>
+      <td>${dot(d.vr)}</td>
+      <td>${guiaLink(d.vr)}</td>
       <td><span class="fase f${f}">${FASE_TXT[f]}</span></td>
       <td>${esc(d.door || '—')}</td>
       <td>${fill === null ? '—' : `<span class="bar"><i style="width:${Math.min(100, fill)}%"></i></span>${fill}%`}</td>
@@ -154,7 +501,7 @@ function render(all) {
       <td>${esc(d.sdt || '—')}</td>
       <td>${d.called ? `🔔 ${hora(d.calledTs)}` : '—'}</td>
       <td class="old" title="${d.ts ? new Date(d.ts).toLocaleString('es-ES') : ''}">${hace(d.ts)}</td>
-      <td>
+      <td style="white-space:nowrap">
         ${d.called
           ? `<button class="b-call" disabled>✓ Llamado</button><button class="b-undo" data-vr="${esc(d.vr)}" title="Quitar la llamada (si el conductor no la ha confirmado, su aviso se cierra solo)">Anular</button>`
           : (pendientes.has(d.vr)
@@ -164,7 +511,6 @@ function render(all) {
       </td>`;
     tb.appendChild(tr);
   });
-  document.getElementById('meta').textContent = `Actualizado ${new Date().toLocaleTimeString('es-ES')} · se refresca cada 15 s`;
 }
 
 // Cuenta atras de 5 s antes de enviar la llamada; otro clic la cancela.
@@ -216,7 +562,23 @@ document.getElementById('tbody').addEventListener('click', e => {
   if (b.classList.contains('b-undo')) anular(b.dataset.vr);
   if (b.classList.contains('b-del')) borrar(b.dataset.vr);
 });
-document.getElementById('fOld').addEventListener('change', cargar);
+document.getElementById('panel').addEventListener('click', e => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  if (b.dataset.act === 'atendido') atendido(b.dataset.vr);
+  if (b.dataset.act === 'delAsist') borrarAsist(b.dataset.vr);
+  if (b.dataset.act === 'delFb') borrarFb(b.dataset.vr);
+});
+['fOld', 'aOld', 'uOld', 'fSolo'].forEach(id => document.getElementById(id).addEventListener('change', renderTodo));
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+  document.querySelectorAll('.sec').forEach(s => s.classList.toggle('on', s.id === 'sec-' + t.dataset.sec));
+  localStorage.setItem('tomyard_tab', t.dataset.sec);
+  renderTodo();
+  if (t.dataset.sec === 'track') setTimeout(() => trkMap && trkMap.invalidateSize(), 50);
+  trkLiveTimer();
+}));
+const tabGuardada = localStorage.getItem('tomyard_tab');
+if (tabGuardada) { const t = document.querySelector(`.tab[data-sec="${tabGuardada}"]`); if (t) t.click(); }
 
 function entrar() {
   document.getElementById('keyBox').style.display = 'none';
