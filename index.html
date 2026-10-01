@@ -255,6 +255,9 @@
     font-size: 13px;
     padding: 10px;
   }
+  .sub-nav { display: flex; gap: 8px; margin-top: 14px; }
+  .sub-nav button { flex: 1; margin: 0; padding: 14px 10px; font-size: 16px; font-weight: 800; border-radius: 12px; }
+  .sub-nav .sub-back { flex: 0 0 auto; background: #232F3E; color: #c7d0dc; border: 1px solid #37475A; font-size: 14px; font-weight: 600; }
   .vr-fixed { font-size: 26px; font-weight: 800; letter-spacing: 2px; color: #ff9900; background: #0F1111; border: 2px solid #ff9900; border-radius: 12px; padding: 12px 16px; text-align: center; margin: 6px 0 12px; }
   .modo-nota {
     font-size: 11px;
@@ -484,6 +487,7 @@ const UI = {
     mapHint: "Arrastra para mover · pellizca o rueda para zoom",
     btnAnterior: "◀ Etapa anterior",
     btnSiguiente: "Etapa siguiente ▶",
+    sub: {aculado: "Ya he aculado ▶", dejarT: "Deja las llaves", dejarD: "Calza la rueda, cierra el camión y entrega las llaves en el punto marcado en el mapa.", entregadas: "Llaves entregadas ▶", recogerT: "Recoge las llaves", tengo: "Ya tengo las llaves ▶", volverT: "Vuelve a tu camión", listo: "Listo para salir ▶", atras: "◀ Atrás", irSala: "Ve a la sala de espera", pcEspera: "Espera en tu plaza de precheck. Cuando te asignen destino, esta pantalla cambiará sola.", psSuelto: "Remolque suelto ▶", psT: "¿Qué haces ahora?", psSalir: "Salgo del recinto ▶", psParking: "Espero con la tractora ▶", parkingT: "Zona de espera de tractoras"},
     disclaimer: "Demo: datos, muelles y tiempos de ejemplo. Las etapas avanzan a mano con los botones de arriba; en producción se actualizarán solas con los datos reales de garita, yard y muelles.",
     badgeCarril: "Carril",
     alertCodigoNoReconocido: c => `Código no reconocido: ${c}`,
@@ -542,6 +546,7 @@ const UI = {
     mapHint: "Drag to move · pinch or scroll to zoom",
     btnAnterior: "◀ Previous stage",
     btnSiguiente: "Next stage ▶",
+    sub: {aculado: "I'm docked ▶", dejarT: "Hand in your keys", dejarD: "Chock the wheel, lock the truck and hand in the keys at the point marked on the map.", entregadas: "Keys handed in ▶", recogerT: "Collect your keys", tengo: "I have my keys ▶", volverT: "Go back to your truck", listo: "Ready to leave ▶", atras: "◀ Back", irSala: "Go to the waiting room", pcEspera: "Wait at your pre-check bay. When you are given a destination this screen will change by itself.", psSuelto: "Trailer dropped ▶", psT: "What now?", psSalir: "I'm leaving the site ▶", psParking: "I'll wait with the tractor ▶", parkingT: "Tractor waiting area"},
     disclaimer: "Demo: example data, docks and times. Stages move forward manually with the buttons above; in production they will update automatically with real gate, yard and dock data.",
     badgeCarril: "Lane",
     alertCodigoNoReconocido: c => `Code not recognized: ${c}`,
@@ -600,6 +605,7 @@ const UI = {
     mapHint: "Faites glisser pour déplacer · pincez ou zoomez avec la molette",
     btnAnterior: "◀ Étape précédente",
     btnSiguiente: "Étape suivante ▶",
+    sub: {aculado: "Je suis à quai ▶", dejarT: "Déposez vos clés", dejarD: "Calez la roue, fermez le camion et déposez les clés au point indiqué sur la carte.", entregadas: "Clés déposées ▶", recogerT: "Récupérez vos clés", tengo: "J'ai mes clés ▶", volverT: "Retournez à votre camion", listo: "Prêt à partir ▶", atras: "◀ Retour", irSala: "Allez à la salle d'attente", pcEspera: "Attendez sur votre place de pré-contrôle. Dès qu'une destination vous sera attribuée, cet écran changera tout seul.", psSuelto: "Remorque dételée ▶", psT: "Et maintenant ?", psSalir: "Je quitte le site ▶", psParking: "J'attends avec le tracteur ▶", parkingT: "Zone d'attente des tracteurs"},
     disclaimer: "Démo : données, quais et horaires d'exemple. Les étapes avancent manuellement avec les boutons ci-dessus ; en production elles se mettront à jour automatiquement avec les données réelles de la guérite, du yard et des quais.",
     badgeCarril: "Voie",
     alertCodigoNoReconocido: c => `Code non reconnu : ${c}`,
@@ -658,6 +664,7 @@ const UI = {
     mapHint: "Trageți pentru a mișca · ciupiți sau derulați pentru zoom",
     btnAnterior: "◀ Etapa anterioară",
     btnSiguiente: "Etapa următoare ▶",
+    sub: {aculado: "Am tras la rampă ▶", dejarT: "Predă cheile", dejarD: "Pune cala la roată, închide camionul și predă cheile la punctul marcat pe hartă.", entregadas: "Chei predate ▶", recogerT: "Ia cheile", tengo: "Am cheile ▶", volverT: "Întoarce-te la camion", listo: "Gata de plecare ▶", atras: "◀ Înapoi", irSala: "Mergi la sala de așteptare", pcEspera: "Așteaptă la locul de pre-verificare. Când primești destinația, acest ecran se va schimba singur.", psSuelto: "Remorcă decuplată ▶", psT: "Ce faci acum?", psSalir: "Ies din incintă ▶", psParking: "Aștept cu capul tractor ▶", parkingT: "Zona de așteptare a capetelor tractor"},
     disclaimer: "Demo: date, docuri și timpuri exemplu. Etapele avansează manual cu butoanele de mai sus; în producție se vor actualiza automat cu datele reale de la poartă, yard și docuri.",
     badgeCarril: "Culoar",
     alertCodigoNoReconocido: c => `Cod nerecunoscut: ${c}`,
@@ -716,6 +723,7 @@ const UI = {
     mapHint: "Ziehen zum Verschieben · Zwei Finger oder Mausrad zum Zoomen",
     btnAnterior: "◀ Vorherige Etappe",
     btnSiguiente: "Nächste Etappe ▶",
+    sub: {aculado: "Ich bin angedockt ▶", dejarT: "Schlüssel abgeben", dejarD: "Rad unterlegen, Lkw abschließen und Schlüssel an der auf der Karte markierten Stelle abgeben.", entregadas: "Schlüssel abgegeben ▶", recogerT: "Schlüssel abholen", tengo: "Ich habe die Schlüssel ▶", volverT: "Zurück zum Lkw", listo: "Bereit zur Ausfahrt ▶", atras: "◀ Zurück", irSala: "Zum Fahrerraum gehen", pcEspera: "Warte auf deinem Vorkontroll-Platz. Sobald du ein Ziel bekommst, wechselt dieser Bildschirm von selbst.", psSuelto: "Anhänger abgesattelt ▶", psT: "Was jetzt?", psSalir: "Ich verlasse das Gelände ▶", psParking: "Ich warte mit der Zugmaschine ▶", parkingT: "Wartebereich Zugmaschinen"},
     disclaimer: "Demo: Beispieldaten, -tore und -zeiten. Die Etappen werden mit den Schaltflächen oben manuell weitergeschaltet; in der Produktion aktualisieren sie sich automatisch mit echten Daten von Tor, Hof und Rampen.",
     badgeCarril: "Spur",
     alertCodigoNoReconocido: c => `Code nicht erkannt: ${c}`,
@@ -774,6 +782,7 @@ const UI = {
     mapHint: "Trascina per spostare · pizzica o rotella per lo zoom",
     btnAnterior: "◀ Tappa precedente",
     btnSiguiente: "Tappa successiva ▶",
+    sub: {aculado: "Ho attraccato ▶", dejarT: "Consegna le chiavi", dejarD: "Metti il cuneo alla ruota, chiudi il camion e consegna le chiavi nel punto indicato sulla mappa.", entregadas: "Chiavi consegnate ▶", recogerT: "Ritira le chiavi", tengo: "Ho le chiavi ▶", volverT: "Torna al tuo camion", listo: "Pronto a uscire ▶", atras: "◀ Indietro", irSala: "Vai alla sala d'attesa", pcEspera: "Attendi nella tua piazzola di pre-controllo. Quando ti assegnano una destinazione questa schermata cambierà da sola.", psSuelto: "Rimorchio sganciato ▶", psT: "E adesso?", psSalir: "Esco dal sito ▶", psParking: "Aspetto con il trattore ▶", parkingT: "Area di attesa trattori"},
     disclaimer: "Demo: dati, baie e tempi di esempio. Le tappe avanzano a mano con i pulsanti in alto; in produzione si aggiorneranno da sole con i dati reali di portineria, piazzale e baie.",
     badgeCarril: "Corsia",
     alertCodigoNoReconocido: c => `Codice non riconosciuto: ${c}`,
@@ -832,6 +841,7 @@ const UI = {
     mapHint: "Taşımak için sürükle · yakınlaştırmak için iki parmak veya tekerlek",
     btnAnterior: "◀ Önceki aşama",
     btnSiguiente: "Sonraki aşama ▶",
+    sub: {aculado: "Rampaya yanaştım ▶", dejarT: "Anahtarları teslim et", dejarD: "Tekerleğe takoz koy, kamyonu kilitle ve anahtarları haritada işaretli noktaya teslim et.", entregadas: "Anahtarlar teslim edildi ▶", recogerT: "Anahtarları al", tengo: "Anahtarlar bende ▶", volverT: "Kamyonuna dön", listo: "Çıkışa hazırım ▶", atras: "◀ Geri", irSala: "Bekleme salonuna git", pcEspera: "Ön kontrol alanında bekle. Sana bir hedef verildiğinde bu ekran kendiliğinden değişecek.", psSuelto: "Römork ayrıldı ▶", psT: "Şimdi ne yapıyorsun?", psSalir: "Tesisten çıkıyorum ▶", psParking: "Çekiciyle bekliyorum ▶", parkingT: "Çekici bekleme alanı"},
     disclaimer: "Demo: örnek veriler, rampalar ve süreler. Aşamalar yukarıdaki düğmelerle elle ilerler; canlı ortamda kapı, saha ve rampa verileriyle otomatik güncellenir.",
     badgeCarril: "Şerit",
     alertCodigoNoReconocido: c => `Kod tanınmadı: ${c}`,
@@ -890,6 +900,7 @@ const UI = {
     mapHint: "اسحب للتحريك · قرّب بإصبعين أو بعجلة الفأرة",
     btnAnterior: "◀ المرحلة السابقة",
     btnSiguiente: "المرحلة التالية ▶",
+    sub: {aculado: "لقد رصفت الشاحنة ▶", dejarT: "سلّم المفاتيح", dejarD: "ضع حاجز العجلة، أقفل الشاحنة وسلّم المفاتيح في النقطة المحددة على الخريطة.", entregadas: "تم تسليم المفاتيح ▶", recogerT: "استلم المفاتيح", tengo: "المفاتيح معي ▶", volverT: "عد إلى شاحنتك", listo: "مستعد للخروج ▶", atras: "◀ رجوع", irSala: "اذهب إلى قاعة الانتظار", pcEspera: "انتظر في موقف الفحص المسبق. عندما يتم تحديد وجهتك ستتغير هذه الشاشة تلقائياً.", psSuelto: "تم فصل المقطورة ▶", psT: "ماذا الآن؟", psSalir: "سأخرج من الموقع ▶", psParking: "سأنتظر مع الجرار ▶", parkingT: "منطقة انتظار الجرارات"},
     disclaimer: "عرض تجريبي: بيانات وأرصفة وأوقات على سبيل المثال. تتقدم المراحل يدويًا بالأزرار أعلاه؛ في التشغيل الفعلي تُحدَّث تلقائيًا ببيانات البوابة والساحة والأرصفة الحقيقية.",
     badgeCarril: "المسار",
     alertCodigoNoReconocido: c => `رمز غير معروف: ${c}`,
@@ -948,6 +959,7 @@ const UI = {
     mapHint: "Плъзни за преместване · щипни или колелце за мащаб",
     btnAnterior: "◀ Предишен етап",
     btnSiguiente: "Следващ етап ▶",
+    sub: {aculado: "Паркирах на рампата ▶", dejarT: "Предай ключовете", dejarD: "Постави клин под колелото, заключи камиона и предай ключовете на отбелязаното място на картата.", entregadas: "Ключовете са предадени ▶", recogerT: "Вземи ключовете", tengo: "Ключовете са у мен ▶", volverT: "Върни се при камиона", listo: "Готов за тръгване ▶", atras: "◀ Назад", irSala: "Отиди в чакалнята", pcEspera: "Чакай на мястото за предварителна проверка. Когато ти дадат дестинация, този екран ще се смени сам.", psSuelto: "Ремаркето е откачено ▶", psT: "Какво сега?", psSalir: "Излизам от обекта ▶", psParking: "Чакам с влекача ▶", parkingT: "Зона за изчакване на влекачи"},
     disclaimer: "Демо: примерни данни, рампи и времена. Етапите се сменят ръчно с бутоните горе; в реална работа ще се обновяват автоматично с реални данни от портала, двора и рампите.",
     badgeCarril: "Лента",
     alertCodigoNoReconocido: c => `Неразпознат код: ${c}`,
@@ -1006,6 +1018,7 @@ const UI = {
     mapHint: "Przeciągnij, aby przesunąć · uszczypnij lub kółko, aby powiększyć",
     btnAnterior: "◀ Poprzedni etap",
     btnSiguiente: "Następny etap ▶",
+    sub: {aculado: "Zadokowałem ▶", dejarT: "Oddaj klucze", dejarD: "Podłóż klin pod koło, zamknij ciężarówkę i oddaj klucze w miejscu zaznaczonym na mapie.", entregadas: "Klucze oddane ▶", recogerT: "Odbierz klucze", tengo: "Mam klucze ▶", volverT: "Wróć do ciężarówki", listo: "Gotowy do wyjazdu ▶", atras: "◀ Wstecz", irSala: "Idź do poczekalni", pcEspera: "Czekaj na miejscu pre-check. Gdy dostaniesz miejsce docelowe, ten ekran zmieni się sam.", psSuelto: "Naczepa odpięta ▶", psT: "Co teraz?", psSalir: "Wyjeżdżam z terenu ▶", psParking: "Czekam z ciągnikiem ▶", parkingT: "Strefa oczekiwania ciągników"},
     disclaimer: "Demo: przykładowe dane, doki i czasy. Etapy przechodzą ręcznie przyciskami powyżej; w produkcji będą aktualizowane automatycznie na podstawie rzeczywistych danych z bramy, placu i doków.",
     badgeCarril: "Pas",
     alertCodigoNoReconocido: c => `Nierozpoznany kod: ${c}`,
@@ -1064,6 +1077,7 @@ const UI = {
     mapHint: "Перетащи, чтобы сдвинуть · щипок или колесо для масштаба",
     btnAnterior: "◀ Предыдущий этап",
     btnSiguiente: "Следующий этап ▶",
+    sub: {aculado: "Я встал к рампе ▶", dejarT: "Сдайте ключи", dejarD: "Подложите башмак под колесо, закройте грузовик и сдайте ключи в точке, отмеченной на карте.", entregadas: "Ключи сданы ▶", recogerT: "Заберите ключи", tengo: "Ключи у меня ▶", volverT: "Вернитесь к грузовику", listo: "Готов к выезду ▶", atras: "◀ Назад", irSala: "Идите в зал ожидания", pcEspera: "Ждите на месте предпроверки. Когда вам назначат место, этот экран сменится сам.", psSuelto: "Прицеп отцеплен ▶", psT: "Что дальше?", psSalir: "Выезжаю с территории ▶", psParking: "Жду с тягачом ▶", parkingT: "Зона ожидания тягачей"},
     disclaimer: "Демо: примерные данные, доки и время. Этапы переключаются вручную кнопками выше; в рабочем режиме они будут обновляться автоматически по реальным данным проходной, двора и доков.",
     badgeCarril: "Полоса",
     alertCodigoNoReconocido: c => `Код не распознан: ${c}`,
@@ -1122,6 +1136,7 @@ const UI = {
     mapHint: "Перетягни, щоб посунути · щипок або коліщатко для масштабу",
     btnAnterior: "◀ Попередній етап",
     btnSiguiente: "Наступний етап ▶",
+    sub: {aculado: "Я став до рампи ▶", dejarT: "Здайте ключі", dejarD: "Підкладіть башмак під колесо, закрийте вантажівку та здайте ключі в точці, позначеній на мапі.", entregadas: "Ключі здано ▶", recogerT: "Заберіть ключі", tengo: "Ключі в мене ▶", volverT: "Поверніться до вантажівки", listo: "Готовий до виїзду ▶", atras: "◀ Назад", irSala: "Ідіть до зали очікування", pcEspera: "Чекайте на місці передперевірки. Коли вам призначать місце, цей екран зміниться сам.", psSuelto: "Причіп відчеплено ▶", psT: "Що далі?", psSalir: "Виїжджаю з території ▶", psParking: "Чекаю з тягачем ▶", parkingT: "Зона очікування тягачів"},
     disclaimer: "Демо: приблизні дані, доки та час. Етапи перемикаються вручну кнопками вище; у робочому режимі вони оновлюватимуться автоматично за реальними даними прохідної, двору та доків.",
     badgeCarril: "Смуга",
     alertCodigoNoReconocido: c => `Код не розпізнано: ${c}`,
@@ -2781,6 +2796,40 @@ function faseDesdeEstado(data) {
   return 1;
 }
 
+/* Subpasos dentro de una fase real (el conductor avanza con "Siguiente"); se guardan por VRID.
+   Fase 1: 0 ir al muelle, 1 dejar llaves, 2 ir a la sala.  Fase 3: 0 recoger llaves, 1 volver al camion, 2 salida. */
+/* Virtuales (PS): 0 ir a la plaza, 1 remolque suelto: elegir, 2 salir del recinto, 3 esperar con la tractora. Precheck (PC): 1 pantalla de espera. */
+function tipoDestino(door) { const d = geoResolver(door); return d ? d.tipo : null; }
+function subN(fase, door) {
+  const t = tipoDestino(door);
+  if (fase >= 1 && t === 'pc') return 1;
+  if (fase >= 1 && t === 'ps') return 4;
+  return fase === 1 || fase === 3 ? 3 : 1;
+}
+function subPasoActual(vrId, fase, door) {
+  const raw = localStorage.getItem('bcn1_sub_' + vrId) || '';
+  const [f, dr, i] = raw.split(':');
+  if (Number(f) !== fase || (dr || '') !== (door || '')) { localStorage.setItem('bcn1_sub_' + vrId, fase + ':' + (door || '') + ':0'); return 0; }
+  return Math.min(Math.max(Number(i) || 0, 0), subN(fase, door) - 1);
+}
+function irSubPaso(target) {
+  const camion = window.__camionActual; if (!camion) return;
+  const data = window.__tomYardLastData;
+  const fase = faseDesdeEstado(data), door = data && data.door ? String(data.door) : '';
+  const cur = subPasoActual(camion.vrId, fase, door);
+  let nx = typeof target === 'number' ? target : cur + (target === 'back' ? -1 : 1);
+  if (target === 'back' && tipoDestino(door) === 'ps' && cur >= 2) nx = 1;
+  nx = Math.min(Math.max(nx, 0), subN(fase, door) - 1);
+  localStorage.setItem('bcn1_sub_' + camion.vrId, fase + ':' + door + ':' + nx);
+  renderGenerico(data);
+  mapWrap.scrollIntoView({ behavior: 'smooth' });
+}
+stepsDiv.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.to !== undefined) irSubPaso(Number(b.dataset.to));
+  else if (b.classList.contains('sub-next')) irSubPaso('next');
+  else if (b.classList.contains('sub-back')) irSubPaso('back');
+});
 function renderGenerico(data) {
   const camion = window.__camionActual;
   if (!camion) return;
@@ -2806,10 +2855,29 @@ function renderGenerico(data) {
   const door = data && data.door ? String(data.door) : null;
   let html = `<span class="badge">${camion.vrId}</span>`;
   if (door && fase >= 1) html += `<span class="badge carril">${R.muelle.badge} ${door}</span>`;
+  const sub = subPasoActual(camion.vrId, fase, door);
+  const nSub = subN(fase, door);
+  const tipo = tipoDestino(door);
+  const S = UI[currentLang].sub;
+  let btnNext = null, extraBtns = '';
   if (fase === 0) {
     const g = T.garita(null);
     html += `<h3>${g.titulo}</h3><p>${g.desc}</p>`;
-  } else if (fase === 1) {
+  } else if (tipo === 'pc') {
+    html += `<h3>${T.precheck(door).titulo}</h3><div class="door-big">${door}</div><p>${S.pcEspera}</p>`;
+  } else if (tipo === 'ps' && sub === 0) {
+    const tt = T.transito(door, 'virtual');
+    html += `<h3>${tt.titulo}</h3><div class="door-big">${door}</div><p>${tt.desc}</p>`;
+    btnNext = S.psSuelto;
+  } else if (tipo === 'ps' && sub === 1) {
+    html += `<h3>${S.psT}</h3>`;
+    extraBtns = `<button type="button" data-to="2">${S.psSalir}</button><button type="button" data-to="3">${S.psParking}</button>`;
+  } else if (tipo === 'ps' && sub === 2) {
+    const puerta = geoRutaSalida(geoResolver(door), !!window.__salidaV2).puerta;
+    html += `<h3>${T.salida().titulo} ${puerta}</h3><p>${T.salida().desc}</p><div class="sdt-line">🚪 <b>${T.salida().corto}: ${puerta}</b></div>`;
+  } else if (tipo === 'ps') {
+    html += `<h3>${S.parkingT}</h3><p>${S.psParking.replace(' ▶', '')}</p>`;
+  } else if (fase === 1 && sub === 0) {
     html += `<h3>${R.muelle.titulo}</h3>`;
     if (door) html += `<div class="door-big">${door}</div><p>${R.muelle.conPuerta(door)}</p>`;
     else html += `<p>${R.muelle.intro}</p>`;
@@ -2818,19 +2886,34 @@ function renderGenerico(data) {
       .filter(p => !p.includes('__ALTURA__'))
       .forEach(p => html += `<li>${p}</li>`);
     html += '</ol>';
-  } else if (fase === 2) {
-    html += `<h3>${R.sala.titulo}</h3><p>${R.sala.desc}</p>`;
+    btnNext = S.aculado;
+  } else if (fase === 1 && sub === 1) {
+    html += `<h3>${S.dejarT}</h3><p>${S.dejarD}</p>`;
+    btnNext = S.entregadas;
+  } else if (fase === 1 || fase === 2) {
+    html += `<h3>${fase === 1 ? S.irSala : R.sala.titulo}</h3><p>${R.sala.desc}</p>`;
     const hSdt = horaSdt(data && data.sdt);
     if (hSdt) html += `<div class="sdt-line">${UI[currentLang].salidaPrevista(hSdt)}</div>`;
+  } else if (sub === 0) {
+    html += `<h3>${S.recogerT}</h3><ol><li>${R.llaves.pasos[0]}</li></ol>`;
+    btnNext = S.tengo;
+  } else if (sub === 1) {
+    html += `<h3>${S.volverT}</h3><ol><li>${R.llaves.pasos[1]}</li><li>${R.llaves.pasos[2]}</li></ol>`;
+    btnNext = S.listo;
   } else {
-    html += `<h3>${R.llaves.titulo}</h3><ol>`;
-    R.llaves.pasos.forEach(p => html += `<li>${p}</li>`);
-    html += '</ol>';
+    const puerta = geoRutaSalida(geoResolver(door), !!window.__salidaV2).puerta;
+    html += `<h3>${T.salida().titulo} ${puerta}</h3><ol><li>${R.llaves.pasos[3]}</li></ol><div class="sdt-line">🚪 <b>${T.salida().corto}: ${puerta}</b></div>`;
+  }
+  if (nSub > 1 && (sub > 0 || btnNext || extraBtns)) {
+    html += '<div class="sub-nav">';
+    if (sub > 0) html += `<button type="button" class="sub-back">${S.atras}</button>`;
+    if (btnNext) html += `<button type="button" class="sub-next">${btnNext}</button>`;
+    html += extraBtns + '</div>';
   }
   stepsDiv.innerHTML = html;
   mapWrap.classList.add('show');
-  geoMostrar(fase, door, !!window.__salidaV2);
-  renderFeedback(fase === 3);
+  geoMostrar(fase, door, !!window.__salidaV2, sub);
+  renderFeedback((fase === 3 && sub === nSub - 1) || (tipo === 'ps' && sub >= 2));
   if (fase !== window.__ultimaFasePresencia) { window.__ultimaFasePresencia = fase; enviarPresencia(); }
 }
 
@@ -3361,16 +3444,25 @@ function geoRutaEntrada(d) {
   const pe = geoProj(tr.carrilEntrada, d.ll);
   return [...tr.vialEste, ...tr.carrilEntrada.slice(0, pe.i + 1), pe.p, d.ll];
 }
-/* Ruta de salida destino -> puerta (V0+lazo sur, V2 o puerta sur segun zona y toggle) */
+/* Ruta de salida destino -> salida V0 (puerta sur) o V2 segun zona y toggle del OM */
 function geoRutaSalida(d, v2) {
   const tr = GEO_TRAMOS;
   if (!d || d.tipo === 'garita') return { pts: [GEO_FIJO.garitaV0], puerta: 'V0' };
-  if (d.tipo === 'ps' && d.n >= 700) { const ps = geoProj(tr.lazoSur, d.ll); return { pts: [d.ll, ps.p, ...tr.lazoSur.slice(ps.i + 1)], puerta: 'SUR' }; }
-  if (d.tipo === 'pc') { const i = geoNearestIdx(tr.lazoSur, GEO_FIJO.garitaV0); return { pts: [d.ll, ...tr.lazoSur.slice(i)], puerta: 'SUR' }; }
+  if (d.tipo === 'ps' && d.n >= 700) { const ps = geoProj(tr.lazoSur, d.ll); return { pts: [d.ll, ps.p, ...tr.lazoSur.slice(ps.i + 1)], puerta: 'V0' }; }
+  if (d.tipo === 'pc') { const i = geoNearestIdx(tr.lazoSur, GEO_FIJO.garitaV0); return { pts: [d.ll, ...tr.lazoSur.slice(i)], puerta: 'V0' }; }
   const pe = geoProj(tr.carrilEntrada, d.ll);
   if (v2) return { pts: [d.ll, pe.p, ...tr.carrilEntrada.slice(pe.i + 1), ...tr.salidaV2], puerta: 'V2' };
   const ps = geoProj(tr.carrilSalida, d.ll);
-  return { pts: [d.ll, ps.p, ...tr.carrilSalida.slice(ps.i + 1), ...tr.lazoSur], puerta: 'SUR' };
+  return { pts: [d.ll, ps.p, ...tr.carrilSalida.slice(ps.i + 1), ...tr.lazoSur], puerta: 'V0' };
+}
+/* Ruta desde una plaza virtual hasta la zona de espera de tractoras */
+function geoRutaParking(d) {
+  const tr = GEO_TRAMOS, park = GEO_POIS.parkingTract;
+  if (!d || !park) return [GEO_FIJO.garitaV0];
+  if (d.tipo === 'ps' && d.n >= 700) { const ps = geoProj(tr.lazoSur, d.ll); return [d.ll, ps.p, ...tr.lazoSur.slice(ps.i + 1), ...tr.reentradaSur, ...tr.tractorasDirecto]; }
+  const pe = geoProj(tr.carrilEntrada, d.ll), pp = geoProj(tr.carrilEntrada, park);
+  if (pp.i >= pe.i) return [d.ll, pe.p, ...tr.carrilEntrada.slice(pe.i + 1, pp.i + 1), pp.p, park];
+  return [d.ll, pe.p, park];
 }
 /* Punto de entrega de llaves segun destino (regla provisional: 136+ y virtuales -> caseta 146; 131- -> junto a la sala) */
 function geoPuntoLlaves(d) {
@@ -3383,13 +3475,7 @@ function geoInit() {
   if (geoMap || typeof L === 'undefined') return;
   geoMap = L.map('map', { maxZoom: 21, zoomControl: true, attributionControl: false });
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 19 }).addTo(geoMap);
-  const st = L.layerGroup().addTo(geoMap);
-  const dot = (ll, color, txt) => { const m = L.circleMarker(ll, { radius: 3, color, fillColor: color, fillOpacity: 1, weight: 1, interactive: false }).addTo(st); if (txt) m.bindTooltip(txt, { permanent: true, direction: 'top', className: 'geo-lbl', offset: [0, -2] }); };
-  for (let n = 107; n <= 173; n++) dot(geoMuelle(n), n <= 122 ? '#2962ff' : '#ff9800', (n % 5 === 0 || n === 107 || n === 173) ? String(n) : '');
-  for (let n = 500; n <= GEO_ULT_ESTE; n++) dot(geoVirtual(n), '#8e24aa', n % 10 === 0 ? 'PS' + n : '');
-  for (let n = 564; n <= 586; n++) dot(geoVirtual(n), '#8e24aa', (n === 564 || n % 10 === 0 || n === 586) ? 'PS' + n : '');
-  for (let n = 700; n <= 735; n++) dot(geoVirtual(n), '#8e24aa', (n % 10 === 0 || n === 721 || n === 735) ? 'PS' + n : '');
-  for (let n = 800; n <= 812; n++) dot(geoPrecheck(n), '#00897b', (n === 800 || n === 812) ? 'PC' + n : '');
+  // Solo se pinta el destino del camion (sin el resto de muelles/plazas, para no confundir)
   geoDyn = L.layerGroup().addTo(geoMap);
   geoMap.setView([41.3143, 2.0757], 17);
   setTimeout(() => geoMap.invalidateSize(), 50);
@@ -3404,39 +3490,73 @@ function geoFit(pts) {
 }
 /* Dibuja la situacion segun la fase real: 0 garita, 1 ir al muelle, 2 sala de espera, 3 llaves y salida.
    dest: codigo (door del ODM). v2: salida por V2 activada por el OM. */
-function geoMostrar(fase, destCode, v2) {
+function geoMostrar(fase, destCode, v2, sub) {
   geoInit(); if (!geoMap) return;
   geoDyn.clearLayers();
+  sub = sub || 0;
   const T = STEP_TEXT[currentLang], R = T.real;
   const d = geoResolver(destCode);
   const lblGarita = 'V0 · ' + T.garita(null).corto, lblSala = R.sala.corto, lblLlaves = R.llaves.corto;
+  const k = geoPuntoLlaves(d);
+  const dash = (a, b) => L.polyline([a, b], { color: '#fff', weight: 3, dashArray: '6 8', opacity: .9, interactive: false });
+  const GRIS = '#6b7280', NAR = '#ff9900', AZUL = '#0b57d0', ROJO = '#e53935';
   let pts = [GEO_FIJO.garitaV0];
-  if (fase <= 1) {
-    geoDyn.addLayer(geoPin(GEO_FIJO.garitaV0, '#6b7280', lblGarita, 'poi'));
+  const tipo = d ? d.tipo : null;
+  if (fase >= 1 && d && (tipo === 'pc' || (tipo === 'ps' && sub === 0))) {
+    const r = geoRutaEntrada(d);
+    geoDyn.addLayer(geoPin(GEO_FIJO.garitaV0, GRIS, lblGarita, 'poi'));
+    geoDyn.addLayer(L.polyline(r, { color: '#1db954', weight: 6, opacity: .95, interactive: false }));
+    geoDyn.addLayer(geoPin(d.ll, NAR, d.txt));
+    pts = r;
+  } else if (fase >= 1 && d && tipo === 'ps' && sub === 1) {
+    geoDyn.addLayer(geoPin(d.ll, NAR, d.txt));
+    pts = [d.ll, GEO_FIJO.garitaV0];
+  } else if (fase >= 1 && d && tipo === 'ps' && sub === 2) {
+    const sal = geoRutaSalida(d, !!v2);
+    geoDyn.addLayer(geoPin(d.ll, GRIS, d.txt, 'poi'));
+    geoDyn.addLayer(L.polyline(sal.pts, { color: ROJO, weight: 6, opacity: .95, dashArray: '12 10', interactive: false }));
+    geoDyn.addLayer(geoPin(sal.pts[sal.pts.length - 1], ROJO, T.salida().corto + ' ' + sal.puerta, 'poi'));
+    pts = sal.pts;
+  } else if (fase >= 1 && d && tipo === 'ps') {
+    const r = geoRutaParking(d);
+    geoDyn.addLayer(geoPin(d.ll, GRIS, d.txt, 'poi'));
+    geoDyn.addLayer(L.polyline(r, { color: '#1db954', weight: 6, opacity: .95, interactive: false }));
+    geoDyn.addLayer(geoPin(r[r.length - 1], AZUL, UI[currentLang].sub.parkingT));
+    pts = r;
+  } else if (fase === 0 || (fase === 1 && sub === 0)) {
+    geoDyn.addLayer(geoPin(GEO_FIJO.garitaV0, GRIS, lblGarita, 'poi'));
     if (d) {
       const r = geoRutaEntrada(d);
       geoDyn.addLayer(L.polyline(r, { color: '#1db954', weight: 6, opacity: .95, interactive: false }));
-      geoDyn.addLayer(geoPin(d.ll, '#ff9900', d.txt));
+      geoDyn.addLayer(geoPin(d.ll, NAR, d.txt));
       pts = r;
-    } else if (fase === 0) {
-      pts = [GEO_FIJO.garitaV0, GEO_FIJO.compact];
-    }
-  } else if (fase === 2) {
-    if (d) { geoDyn.addLayer(geoPin(d.ll, '#ff9900', d.txt)); pts.push(d.ll); }
-    geoDyn.addLayer(geoPin(GEO_FIJO.sala, '#0b57d0', lblSala));
-    if (d) geoDyn.addLayer(L.polyline([d.ll, GEO_FIJO.sala], { color: '#fff', weight: 3, dashArray: '6 8', opacity: .9, interactive: false }));
-    pts = d ? [d.ll, GEO_FIJO.sala] : [GEO_FIJO.sala, GEO_FIJO.garitaV0];
+    } else if (fase === 0) pts = [GEO_FIJO.garitaV0, GEO_FIJO.compact];
+  } else if (fase === 1 && sub === 1) {
+    if (d) { geoDyn.addLayer(geoPin(d.ll, GRIS, d.txt, 'poi')); geoDyn.addLayer(dash(d.ll, k.ll)); }
+    geoDyn.addLayer(geoPin(k.ll, AZUL, lblLlaves));
+    pts = d ? [d.ll, k.ll] : [k.ll, GEO_FIJO.garitaV0];
+  } else if (fase === 1 || fase === 2) {
+    geoDyn.addLayer(geoPin(k.ll, GRIS, lblLlaves, 'poi'));
+    geoDyn.addLayer(dash(k.ll, GEO_FIJO.sala));
+    geoDyn.addLayer(geoPin(GEO_FIJO.sala, AZUL, lblSala));
+    pts = [k.ll, GEO_FIJO.sala];
+  } else if (sub === 0) {
+    geoDyn.addLayer(geoPin(GEO_FIJO.sala, GRIS, lblSala, 'poi'));
+    geoDyn.addLayer(dash(GEO_FIJO.sala, k.ll));
+    geoDyn.addLayer(geoPin(k.ll, AZUL, lblLlaves));
+    pts = [GEO_FIJO.sala, k.ll];
+  } else if (sub === 1) {
+    geoDyn.addLayer(geoPin(k.ll, GRIS, lblLlaves, 'poi'));
+    if (d) { geoDyn.addLayer(dash(k.ll, d.ll)); geoDyn.addLayer(geoPin(d.ll, NAR, d.txt)); pts = [k.ll, d.ll]; }
+    else pts = [k.ll, GEO_FIJO.garitaV0];
   } else {
-    const k = geoPuntoLlaves(d);
-    geoDyn.addLayer(geoPin(k.ll, '#0b57d0', lblLlaves));
     if (d) {
-      geoDyn.addLayer(geoPin(d.ll, '#ff9900', d.txt));
-      geoDyn.addLayer(L.polyline([k.ll, d.ll], { color: '#fff', weight: 3, dashArray: '6 8', opacity: .9, interactive: false }));
+      geoDyn.addLayer(geoPin(d.ll, GRIS, d.txt, 'poi'));
       const sal = geoRutaSalida(d, !!v2);
-      geoDyn.addLayer(L.polyline(sal.pts, { color: '#e53935', weight: 6, opacity: .95, dashArray: '12 10', interactive: false }));
+      geoDyn.addLayer(L.polyline(sal.pts, { color: ROJO, weight: 6, opacity: .95, dashArray: '12 10', interactive: false }));
       const fin = sal.pts[sal.pts.length - 1];
-      geoDyn.addLayer(geoPin(fin, '#e53935', sal.puerta === 'V2' ? 'V2' : (sal.puerta === 'V0' ? 'V0' : 'EXIT'), 'poi'));
-      pts = [k.ll, ...sal.pts];
+      geoDyn.addLayer(geoPin(fin, ROJO, T.salida().corto + ' ' + sal.puerta, 'poi'));
+      pts = sal.pts;
     } else pts = [k.ll, GEO_FIJO.garitaV0];
   }
   geoFit(pts);
