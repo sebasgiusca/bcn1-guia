@@ -31,7 +31,8 @@
   tr:hover td { background: #2b3a4d; }
   .vr { font-family: monospace; font-weight: 700; font-size: 14px; white-space: nowrap; }
   .fase { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-  .f0 { background: #37475A; } .f1 { background: #0B3D2E; color: #3DDC97; } .f2 { background: #FA8900; color: #0F1111; } .f3 { background: #00A8E1; color: #0F1111; }
+  .f0 { background: #37475A; } .f1 { background: #0B3D2E; color: #3DDC97; } .f2 { background: #FA8900; color: #0F1111; } .f3 { background: #00A8E1; color: #0F1111; } .f4 { background: #55606e; color: #e6ebf1; }
+  .b-fin { background: #067D62; color: #fff; margin-left: 6px; }
   .bar { width: 110px; height: 10px; background: #37475A; border-radius: 5px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
   .bar i { display: block; height: 100%; background: #3DDC97; }
   .old { color: #8a97a8; white-space: nowrap; }
@@ -143,7 +144,9 @@
         <div class="card"><div class="n" id="cMuelle">0</div><div class="l">En muelle / sin empezar</div></div>
         <div class="card"><div class="n" id="cSala">0</div><div class="l">Cargando / en sala</div></div>
         <div class="card"><div class="n" id="cLlamados">0</div><div class="l">Llamados</div></div>
+        <div class="card"><div class="n" id="cFin">0</div><div class="l">Con salida dada</div></div>
       </div>
+      <div class="hint">La guía del conductor solo se abre si su VRID está aquí (acreditado en garita, &lt; 24 h). "Dar salida" cierra su enlace; también se cierra solo cuando el conductor pulsa "He salido" o el GPS le ve fuera del recinto.</div>
       <div class="filters"><label><input type="checkbox" id="fOld"> Mostrar también antiguos (&gt; 24 h)</label></div>
       <table><thead><tr>
         <th></th><th>VRID</th><th>Fase</th><th>Muelle</th><th>Carga</th><th>Estado ODM</th><th>Salida prog.</th><th>Llamado</th><th>Última act.</th><th></th>
@@ -188,14 +191,15 @@ let urgentesAvisados = new Set();
 
 function fase(d) {
   if (!d) return 0;
+  if (d.fin) return 4;
   if (d.called) return 3;
   const fill = typeof d.fill === 'number' ? d.fill : null;
   const st = (d.status || '').toUpperCase();
   if (st === 'LOADING_IN_PROGRESS' || st === 'FINISHED_LOADING' || (fill !== null && fill > 0)) return 2;
   return 1;
 }
-const FASE_TXT = ['Garita', 'Muelle', 'Sala de espera', 'Llamado'];
-const FASE_GUIA = ['Garita', 'Muelle', 'Sala de espera', 'Llaves'];
+const FASE_TXT = ['Garita', 'Muelle', 'Sala de espera', 'Llamado', 'Salió'];
+const FASE_GUIA = ['Garita', 'Muelle', 'Sala de espera', 'Llaves', 'Salió'];
 
 function hace(ts) {
   if (!ts) return '—';
@@ -481,6 +485,7 @@ function render(all) {
   document.getElementById('cMuelle').textContent = activos.filter(d => fase(d) === 1).length;
   document.getElementById('cSala').textContent = activos.filter(d => fase(d) === 2).length;
   document.getElementById('cLlamados').textContent = activos.filter(d => fase(d) === 3).length;
+  document.getElementById('cFin').textContent = activos.filter(d => fase(d) === 4).length;
 
   const tb = document.getElementById('tbody');
   tb.innerHTML = '';
@@ -502,11 +507,13 @@ function render(all) {
       <td>${d.called ? `🔔 ${hora(d.calledTs)}` : '—'}</td>
       <td class="old" title="${d.ts ? new Date(d.ts).toLocaleString('es-ES') : ''}">${hace(d.ts)}</td>
       <td style="white-space:nowrap">
-        ${d.called
-          ? `<button class="b-call" disabled>✓ Llamado</button><button class="b-undo" data-vr="${esc(d.vr)}" title="Quitar la llamada (si el conductor no la ha confirmado, su aviso se cierra solo)">Anular</button>`
+        ${d.fin
+          ? `<span class="old">salió ${hora(d.finTs)}</span><button class="b-undo" data-act2="reabrir" data-vr="${esc(d.vr)}" title="Reabrir el enlace del conductor">Reabrir</button>`
+          : d.called
+          ? `<button class="b-call" disabled>✓ Llamado</button><button class="b-undo" data-vr="${esc(d.vr)}" title="Quitar la llamada (si el conductor no la ha confirmado, su aviso se cierra solo)">Anular</button><button class="b-fin" data-act2="fin" data-vr="${esc(d.vr)}" title="Cerrar el enlace del conductor">🚪 Salida</button>`
           : (pendientes.has(d.vr)
               ? `<button class="b-call b-wait" data-vr="${esc(d.vr)}">⏳ ${pendientes.get(d.vr).restante} · Cancelar</button>`
-              : `<button class="b-call" data-vr="${esc(d.vr)}">🔔 Llamar</button>`)}
+              : `<button class="b-call" data-vr="${esc(d.vr)}">🔔 Llamar</button><button class="b-fin" data-act2="fin" data-vr="${esc(d.vr)}" title="Cerrar el enlace del conductor">🚪 Salida</button>`)}
         <button class="b-del" data-vr="${esc(d.vr)}" title="Borrar registro">🗑</button>
       </td>`;
     tb.appendChild(tr);
@@ -556,8 +563,17 @@ async function borrar(vr) {
   cargar();
 }
 
+async function darSalida(vr, fin) {
+  if (fin && !confirm(`¿Dar salida a ${vr}? Su enlace de la guía dejará de funcionar.`)) return;
+  await fetch(`${DB}/trucks/${encodeURIComponent(vr)}.json?auth=${encodeURIComponent(key)}`, {
+    method: 'PATCH', body: JSON.stringify(fin ? { fin: true, finTs: Date.now() } : { fin: null, finTs: null, reopenTs: Date.now() })
+  }).catch(() => {});
+  cargar();
+}
 document.getElementById('tbody').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.act2 === 'fin') { darSalida(b.dataset.vr, true); return; }
+  if (b.dataset.act2 === 'reabrir') { darSalida(b.dataset.vr, false); return; }
   if (b.classList.contains('b-call') && !b.disabled) llamar(b.dataset.vr);
   if (b.classList.contains('b-undo')) anular(b.dataset.vr);
   if (b.classList.contains('b-del')) borrar(b.dataset.vr);

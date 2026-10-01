@@ -257,6 +257,7 @@
   }
   .sub-nav { display: flex; gap: 8px; margin-top: 14px; }
   .sub-nav button { flex: 1; margin: 0; padding: 14px 10px; font-size: 16px; font-weight: 800; border-radius: 12px; }
+  .sub-nav .sub-fin { background: #067D62; color: #fff; }
   .sub-nav .sub-back { flex: 0 0 auto; background: #232F3E; color: #c7d0dc; border: 1px solid #37475A; font-size: 14px; font-weight: 600; }
   .vr-fixed { font-size: 26px; font-weight: 800; letter-spacing: 2px; color: #ff9900; background: #0F1111; border: 2px solid #ff9900; border-radius: 12px; padding: 12px 16px; text-align: center; margin: 6px 0 12px; }
   .modo-nota {
@@ -374,7 +375,16 @@
 #btnAssist.sent { background: #067D62; }
 #btnAssist .lbl { display: none; }
 #geoOverlay { position: fixed; inset: 0; z-index: 9400; background: rgba(15,17,17,.85); display: flex; align-items: center; justify-content: center; padding: 16px; }
+#geoChip { position: absolute; left: 8px; bottom: 8px; z-index: 900; background: rgba(15,17,17,.85); color: #fff; font-size: 11px; font-weight: 600; padding: 5px 9px; border-radius: 999px; pointer-events: none; max-width: 85%; }
+#geoChip.out { background: rgba(217,72,15,.9); }
 .geo-dot { width: 18px; height: 18px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff; box-shadow: 0 0 0 2px #1a73e8, 0 0 12px rgba(26,115,232,.8); }
+#lockOverlay { position: fixed; inset: 0; z-index: 9900; background: #131A22; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.lock-card { max-width: 420px; text-align: center; color: #fff; }
+.lock-vr { font-family: monospace; font-size: 22px; font-weight: 800; color: #ff9900; letter-spacing: 2px; margin-bottom: 18px; }
+.lock-icon { font-size: 56px; margin-bottom: 10px; }
+.lock-card .assist-title { font-size: 22px; }
+.lock-card .assist-desc { color: #c7d0dc; font-size: 15px; line-height: 1.45; }
+.lock-en { margin-top: 18px; font-size: 12px; color: #8a97a8; }
 #assistOverlay { position: fixed; inset: 0; z-index: 9500; background: rgba(15,17,17,.85); display: flex; align-items: center; justify-content: center; padding: 16px; }
 .assist-card { background: #232F3E; border-radius: 14px; padding: 20px 18px; max-width: 440px; width: 100%; border-top: 6px solid #c7254e; }
 .assist-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
@@ -436,6 +446,7 @@
   <div class="map-hint" id="txtMapHint"></div>
   <div class="map-controls">
     <button id="zoomReset" type="button" title="Centrar">&#8982;</button>
+    <div id="geoChip" style="display:none"></div>
   </div>
   <div id="map"></div>
 </div>
@@ -456,6 +467,7 @@
   <textarea id="asNota" rows="2" maxlength="300"></textarea>
   <div class="assist-row"><button type="button" id="btnAsEnviar" class="as-send" disabled></button><button type="button" id="btnAsCancelar" class="as-cancel"></button></div>
 </div></div>
+<div id="lockOverlay" style="display:none"><div class="lock-card"><div class="lock-vr" id="lockVr"></div><div class="lock-icon" id="lockIcon"></div><div class="assist-title" id="lockT"></div><div class="assist-desc" id="lockD"></div><div class="lock-en" id="lockEn"></div></div></div>
 <div id="callOverlay" style="display:none"><div class="call-card"><div class="call-title" id="callTitulo"></div><div class="call-desc" id="callDesc"></div><button type="button" id="btnCallOk"></button></div></div>
 
 <div class="demo-controls" id="demoControls" style="display:none;">
@@ -504,6 +516,7 @@ const UI = {
     callTitulo: "🔔 ¡TE LLAMAN!",
     callDesc: "Tu carga está lista. Ve a la ventanilla de la sala de conductores a recoger las llaves.",
     callOk: "Entendido, voy",
+    lockAcredT: "Acceso no disponible", lockAcredD: "Este enlace solo funciona después de acreditarte en la garita de BCN1. Si ya lo has hecho, espera un momento: la pantalla se activará sola.", lockFinT: "Recorrido finalizado", lockFinD: "Ya has salido del recinto. Gracias por tu visita a BCN1; este enlace ha dejado de estar activo.", btnSalido: "He salido del recinto ▶",
     fbTitulo: "¿Te ha servido esta guía?",
     fbCaras: ["No", "Más o menos", "Sí"],
     fbComentario: "¿Qué mejorarías? (opcional)",
@@ -515,6 +528,7 @@ const UI = {
     geoNo: "Ahora no",
     geoOn: "Ubicación activa dentro del recinto",
     geoDenied: "Permiso de ubicación denegado. Puedes activarlo en los ajustes del navegador.",
+    geoChipIn: "📍 Ubicación activa solo dentro de BCN1", geoChipOut: "📍 Fuera del recinto: no se registra tu ubicación",
     asBtn: "🆘 Asistencia",
     asTitulo: "¿Necesitas ayuda?",
     asDesc: "Elige el nivel y, si quieres, cuéntanos qué pasa. Alguien del equipo irá a atenderte.",
@@ -563,6 +577,7 @@ const UI = {
     callTitulo: "🔔 YOU ARE BEING CALLED!",
     callDesc: "Your load is ready. Go to the drivers' lounge window to collect your keys.",
     callOk: "Got it, on my way",
+    lockAcredT: "Access not available", lockAcredD: "This link only works after you check in at the BCN1 gate. If you already have, wait a moment: the screen will activate by itself.", lockFinT: "Visit finished", lockFinD: "You have left the site. Thank you for visiting BCN1; this link is no longer active.", btnSalido: "I have left the site ▶",
     fbTitulo: "Was this guide useful?",
     fbCaras: ["No", "Somewhat", "Yes"],
     fbComentario: "What would you improve? (optional)",
@@ -574,6 +589,7 @@ const UI = {
     geoNo: "Not now",
     geoOn: "Location active inside the site",
     geoDenied: "Location permission denied. You can enable it in your browser settings.",
+    geoChipIn: "📍 Location active only inside BCN1", geoChipOut: "📍 Outside the site: your location is not recorded",
     asBtn: "🆘 Assistance",
     asTitulo: "Do you need help?",
     asDesc: "Choose the level and, if you like, tell us what is going on. Someone from the team will come to you.",
@@ -622,6 +638,7 @@ const UI = {
     callTitulo: "🔔 ON VOUS APPELLE !",
     callDesc: "Votre chargement est prêt. Allez au guichet de la salle des chauffeurs récupérer vos clés.",
     callOk: "Compris, j'y vais",
+    lockAcredT: "Accès non disponible", lockAcredD: "Ce lien ne fonctionne qu'après votre enregistrement à la guérite de BCN1. Si c'est déjà fait, patientez un instant : l'écran s'activera tout seul.", lockFinT: "Parcours terminé", lockFinD: "Vous avez quitté le site. Merci de votre visite à BCN1 ; ce lien n'est plus actif.", btnSalido: "J'ai quitté le site ▶",
     fbTitulo: "Ce guide vous a-t-il été utile ?",
     fbCaras: ["Non", "Plus ou moins", "Oui"],
     fbComentario: "Qu'amélioreriez-vous ? (facultatif)",
@@ -633,6 +650,7 @@ const UI = {
     geoNo: "Pas maintenant",
     geoOn: "Position active dans l'enceinte",
     geoDenied: "Autorisation de localisation refusée. Vous pouvez l'activer dans les réglages du navigateur.",
+    geoChipIn: "📍 Position active uniquement dans BCN1", geoChipOut: "📍 Hors du site : votre position n'est pas enregistrée",
     asBtn: "🆘 Assistance",
     asTitulo: "Besoin d'aide ?",
     asDesc: "Choisissez le niveau et, si vous le souhaitez, expliquez-nous. Quelqu'un de l'équipe viendra vous voir.",
@@ -681,6 +699,7 @@ const UI = {
     callTitulo: "🔔 EȘTI CHEMAT!",
     callDesc: "Încărcătura ta este gata. Mergi la ghișeul sălii șoferilor să iei cheile.",
     callOk: "Am înțeles, merg",
+    lockAcredT: "Acces indisponibil", lockAcredD: "Acest link funcționează doar după ce te-ai înregistrat la poarta BCN1. Dacă ai făcut-o deja, așteaptă puțin: ecranul se va activa singur.", lockFinT: "Traseu încheiat", lockFinD: "Ai ieșit din incintă. Mulțumim pentru vizita la BCN1; acest link nu mai este activ.", btnSalido: "Am ieșit din incintă ▶",
     fbTitulo: "Ți-a fost utilă această ghidare?",
     fbCaras: ["Nu", "Așa și așa", "Da"],
     fbComentario: "Ce ai îmbunătăți? (opțional)",
@@ -692,6 +711,7 @@ const UI = {
     geoNo: "Nu acum",
     geoOn: "Locație activă în incintă",
     geoDenied: "Permisiunea de locație a fost refuzată. O poți activa din setările browserului.",
+    geoChipIn: "📍 Locația e activă doar în BCN1", geoChipOut: "📍 În afara incintei: locația ta nu se înregistrează",
     asBtn: "🆘 Asistență",
     asTitulo: "Ai nevoie de ajutor?",
     asDesc: "Alege nivelul și, dacă vrei, spune-ne ce se întâmplă. Cineva din echipă va veni la tine.",
@@ -740,6 +760,7 @@ const UI = {
     callTitulo: "🔔 DU WIRST AUFGERUFEN!",
     callDesc: "Deine Ladung ist fertig. Geh zum Schalter im Fahrerraum und hol deine Schlüssel ab.",
     callOk: "Verstanden, ich komme",
+    lockAcredT: "Zugang nicht verfügbar", lockAcredD: "Dieser Link funktioniert erst nach der Anmeldung am Tor von BCN1. Falls schon erledigt, kurz warten: der Bildschirm schaltet sich von selbst frei.", lockFinT: "Besuch beendet", lockFinD: "Du hast das Gelände verlassen. Danke für deinen Besuch bei BCN1; dieser Link ist nicht mehr aktiv.", btnSalido: "Ich habe das Gelände verlassen ▶",
     fbTitulo: "War dieser Leitfaden hilfreich?",
     fbCaras: ["Nein", "Teilweise", "Ja"],
     fbComentario: "Was würdest du verbessern? (optional)",
@@ -751,6 +772,7 @@ const UI = {
     geoNo: "Jetzt nicht",
     geoOn: "Standort auf dem Gelände aktiv",
     geoDenied: "Standortberechtigung verweigert. Du kannst sie in den Browser-Einstellungen aktivieren.",
+    geoChipIn: "📍 Standort nur innerhalb von BCN1 aktiv", geoChipOut: "📍 Außerhalb des Geländes: dein Standort wird nicht gespeichert",
     asBtn: "🆘 Hilfe",
     asTitulo: "Brauchst du Hilfe?",
     asDesc: "Wähle die Stufe und erzähl uns, wenn du willst, was los ist. Jemand vom Team kommt zu dir.",
@@ -799,6 +821,7 @@ const UI = {
     callTitulo: "🔔 TI CHIAMANO!",
     callDesc: "Il tuo carico è pronto. Vai allo sportello della sala autisti a ritirare le chiavi.",
     callOk: "Capito, arrivo",
+    lockAcredT: "Accesso non disponibile", lockAcredD: "Questo link funziona solo dopo la registrazione alla portineria di BCN1. Se l'hai già fatta, attendi un momento: la schermata si attiverà da sola.", lockFinT: "Percorso terminato", lockFinD: "Sei uscito dal sito. Grazie per la visita a BCN1; questo link non è più attivo.", btnSalido: "Sono uscito dal sito ▶",
     fbTitulo: "Ti è stata utile questa guida?",
     fbCaras: ["No", "Così così", "Sì"],
     fbComentario: "Cosa miglioreresti? (facoltativo)",
@@ -810,6 +833,7 @@ const UI = {
     geoNo: "Non ora",
     geoOn: "Posizione attiva nel sito",
     geoDenied: "Permesso di posizione negato. Puoi attivarlo nelle impostazioni del browser.",
+    geoChipIn: "📍 Posizione attiva solo dentro BCN1", geoChipOut: "📍 Fuori dal sito: la tua posizione non viene registrata",
     asBtn: "🆘 Assistenza",
     asTitulo: "Hai bisogno di aiuto?",
     asDesc: "Scegli il livello e, se vuoi, raccontaci cosa succede. Qualcuno del team verrà da te.",
@@ -858,6 +882,7 @@ const UI = {
     callTitulo: "🔔 SENİ ÇAĞIRIYORLAR!",
     callDesc: "Yükün hazır. Anahtarlarını almak için sürücü salonundaki gişeye git.",
     callOk: "Anladım, geliyorum",
+    lockAcredT: "Erişim yok", lockAcredD: "Bu bağlantı yalnızca BCN1 kapısında kayıt yaptırdıktan sonra çalışır. Yaptırdıysan biraz bekle: ekran kendiliğinden açılacak.", lockFinT: "Ziyaret tamamlandı", lockFinD: "Tesisten çıktın. BCN1'i ziyaret ettiğin için teşekkürler; bu bağlantı artık etkin değil.", btnSalido: "Tesisten çıktım ▶",
     fbTitulo: "Bu rehber işine yaradı mı?",
     fbCaras: ["Hayır", "Biraz", "Evet"],
     fbComentario: "Neyi iyileştirirdin? (isteğe bağlı)",
@@ -869,6 +894,7 @@ const UI = {
     geoNo: "Şimdi değil",
     geoOn: "Tesis içinde konum etkin",
     geoDenied: "Konum izni reddedildi. Tarayıcı ayarlarından etkinleştirebilirsiniz.",
+    geoChipIn: "📍 Konum yalnızca BCN1 içinde etkin", geoChipOut: "📍 Tesis dışında: konumun kaydedilmiyor",
     asBtn: "🆘 Yardım",
     asTitulo: "Yardıma ihtiyacın var mı?",
     asDesc: "Seviyeyi seç ve istersen ne olduğunu anlat. Ekipten biri yanına gelecek.",
@@ -917,6 +943,7 @@ const UI = {
     callTitulo: "🔔 يتم استدعاؤك!",
     callDesc: "حمولتك جاهزة. اذهب إلى نافذة قاعة السائقين لاستلام المفاتيح.",
     callOk: "فهمت، أنا في الطريق",
+    lockAcredT: "الوصول غير متاح", lockAcredD: "يعمل هذا الرابط فقط بعد تسجيلك عند بوابة BCN1. إذا كنت قد سجلت بالفعل، انتظر لحظة: ستُفعَّل الشاشة تلقائياً.", lockFinT: "انتهت الزيارة", lockFinD: "لقد خرجت من الموقع. شكراً لزيارتك BCN1؛ لم يعد هذا الرابط فعالاً.", btnSalido: "لقد خرجت من الموقع ▶",
     fbTitulo: "هل كان هذا الدليل مفيدًا لك؟",
     fbCaras: ["لا", "نوعًا ما", "نعم"],
     fbComentario: "ما الذي تقترح تحسينه؟ (اختياري)",
@@ -928,6 +955,7 @@ const UI = {
     geoNo: "ليس الآن",
     geoOn: "الموقع مفعّل داخل الموقع",
     geoDenied: "تم رفض إذن الموقع. يمكنك تفعيله من إعدادات المتصفح.",
+    geoChipIn: "📍 الموقع مفعّل داخل BCN1 فقط", geoChipOut: "📍 خارج الموقع: لا يتم تسجيل موقعك",
     asBtn: "🆘 مساعدة",
     asTitulo: "هل تحتاج إلى مساعدة؟",
     asDesc: "اختر المستوى، وإن أردت أخبرنا بما يحدث. سيأتي إليك أحد أفراد الفريق.",
@@ -976,6 +1004,7 @@ const UI = {
     callTitulo: "🔔 ВИКАТ ТЕ!",
     callDesc: "Товарът ти е готов. Отиди на гишето в залата за шофьори, за да вземеш ключовете.",
     callOk: "Разбрано, идвам",
+    lockAcredT: "Достъпът не е наличен", lockAcredD: "Този линк работи само след регистрация на портала на BCN1. Ако вече си го направил, изчакай малко: екранът ще се активира сам.", lockFinT: "Посещението е приключено", lockFinD: "Излезе от обекта. Благодарим за посещението в BCN1; този линк вече не е активен.", btnSalido: "Излязох от обекта ▶",
     fbTitulo: "Полезни ли бяха тези указания?",
     fbCaras: ["Не", "Донякъде", "Да"],
     fbComentario: "Какво би подобрил? (по желание)",
@@ -987,6 +1016,7 @@ const UI = {
     geoNo: "Не сега",
     geoOn: "Местоположението е активно в обекта",
     geoDenied: "Разрешението за местоположение е отказано. Можеш да го включиш в настройките на браузъра.",
+    geoChipIn: "📍 Местоположението е активно само в BCN1", geoChipOut: "📍 Извън обекта: местоположението ти не се записва",
     asBtn: "🆘 Помощ",
     asTitulo: "Нуждаеш ли се от помощ?",
     asDesc: "Избери ниво и, ако искаш, разкажи какво се случва. Някой от екипа ще дойде при теб.",
@@ -1035,6 +1065,7 @@ const UI = {
     callTitulo: "🔔 WZYWAJĄ CIĘ!",
     callDesc: "Twój ładunek jest gotowy. Idź do okienka w poczekalni kierowców po kluczyki.",
     callOk: "Rozumiem, idę",
+    lockAcredT: "Dostęp niedostępny", lockAcredD: "Ten link działa dopiero po zgłoszeniu się na bramie BCN1. Jeśli już to zrobiłeś, poczekaj chwilę: ekran uaktywni się sam.", lockFinT: "Wizyta zakończona", lockFinD: "Opuściłeś teren obiektu. Dziękujemy za wizytę w BCN1; ten link nie jest już aktywny.", btnSalido: "Opuściłem teren ▶",
     fbTitulo: "Czy ten przewodnik był pomocny?",
     fbCaras: ["Nie", "Średnio", "Tak"],
     fbComentario: "Co byś poprawił? (opcjonalnie)",
@@ -1046,6 +1077,7 @@ const UI = {
     geoNo: "Nie teraz",
     geoOn: "Lokalizacja aktywna na terenie obiektu",
     geoDenied: "Odmówiono dostępu do lokalizacji. Możesz go włączyć w ustawieniach przeglądarki.",
+    geoChipIn: "📍 Lokalizacja aktywna tylko na terenie BCN1", geoChipOut: "📍 Poza obiektem: Twoja lokalizacja nie jest zapisywana",
     asBtn: "🆘 Pomoc",
     asTitulo: "Potrzebujesz pomocy?",
     asDesc: "Wybierz poziom i, jeśli chcesz, opisz, co się dzieje. Ktoś z zespołu do ciebie przyjdzie.",
@@ -1094,6 +1126,7 @@ const UI = {
     callTitulo: "🔔 ТЕБЯ ВЫЗЫВАЮТ!",
     callDesc: "Твой груз готов. Подойди к окну в зале водителей, чтобы забрать ключи.",
     callOk: "Понял, иду",
+    lockAcredT: "Доступ недоступен", lockAcredD: "Эта ссылка работает только после регистрации на проходной BCN1. Если вы уже зарегистрировались, подождите немного: экран активируется сам.", lockFinT: "Визит завершён", lockFinD: "Вы покинули территорию. Спасибо за визит в BCN1; эта ссылка больше не активна.", btnSalido: "Я выехал с территории ▶",
     fbTitulo: "Было ли это руководство полезным?",
     fbCaras: ["Нет", "Отчасти", "Да"],
     fbComentario: "Что бы ты улучшил? (по желанию)",
@@ -1105,6 +1138,7 @@ const UI = {
     geoNo: "Не сейчас",
     geoOn: "Геолокация активна на территории",
     geoDenied: "Доступ к геолокации запрещён. Его можно включить в настройках браузера.",
+    geoChipIn: "📍 Геолокация активна только внутри BCN1", geoChipOut: "📍 Вне территории: ваше местоположение не записывается",
     asBtn: "🆘 Помощь",
     asTitulo: "Нужна помощь?",
     asDesc: "Выбери уровень и, если хочешь, расскажи, что случилось. Кто-то из команды подойдёт к тебе.",
@@ -1153,6 +1187,7 @@ const UI = {
     callTitulo: "🔔 ТЕБЕ КЛИЧУТЬ!",
     callDesc: "Твій вантаж готовий. Підійди до вікна в залі водіїв, щоб забрати ключі.",
     callOk: "Зрозумів, іду",
+    lockAcredT: "Доступ недоступний", lockAcredD: "Це посилання працює лише після реєстрації на прохідній BCN1. Якщо ви вже зареєструвалися, зачекайте трохи: екран активується сам.", lockFinT: "Візит завершено", lockFinD: "Ви покинули територію. Дякуємо за візит до BCN1; це посилання більше не активне.", btnSalido: "Я виїхав з території ▶",
     fbTitulo: "Чи була ця інструкція корисною?",
     fbCaras: ["Ні", "Частково", "Так"],
     fbComentario: "Що б ти покращив? (за бажанням)",
@@ -1164,6 +1199,7 @@ const UI = {
     geoNo: "Не зараз",
     geoOn: "Геолокація активна на території",
     geoDenied: "Доступ до геолокації відхилено. Його можна увімкнути в налаштуваннях браузера.",
+    geoChipIn: "📍 Геолокація активна лише всередині BCN1", geoChipOut: "📍 Поза територією: ваше місцезнаходження не записується",
     asBtn: "🆘 Допомога",
     asTitulo: "Потрібна допомога?",
     asDesc: "Обери рівень і, якщо хочеш, розкажи, що сталося. Хтось із команди підійде до тебе.",
@@ -2752,6 +2788,7 @@ document.getElementById('btnAceptarNormas').addEventListener('click', () => {
 
 function renderTomYard(data) {
   window.__tomYardLastData = data;
+  if (data && data.fin && window.__camionActual && window.__camionActual.esGenerico) { finalizarRecorrido(false); return; }
   const camionAct = window.__camionActual;
   if (camionAct && camionAct.esGenerico) renderGenerico(data);
   const box = document.getElementById('tomYardBox');
@@ -2791,6 +2828,7 @@ function faseDesdeEstado(data) {
   if (data.called) return 3;
   const fill = typeof data.fill === 'number' ? data.fill : null;
   const st = (data.status || '').toUpperCase();
+  if (!data.door && !st && fill === null) return 0; // acreditado en garita (Sesame) pero ODM aun no le ha dado destino
   if (st === 'LOADING_IN_PROGRESS' || (fill !== null && fill > 0)) return 2;
   if (st === 'SCHEDULED' || fill === 0) return 1;
   return 1;
@@ -2826,6 +2864,7 @@ function irSubPaso(target) {
 }
 stepsDiv.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
+  if (b.classList.contains('sub-fin')) { if (confirm(UI[currentLang].btnSalido.replace(' ▶', '') + '?')) finalizarRecorrido(true); return; }
   if (b.dataset.to !== undefined) irSubPaso(Number(b.dataset.to));
   else if (b.classList.contains('sub-next')) irSubPaso('next');
   else if (b.classList.contains('sub-back')) irSubPaso('back');
@@ -2875,6 +2914,7 @@ function renderGenerico(data) {
   } else if (tipo === 'ps' && sub === 2) {
     const puerta = geoRutaSalida(geoResolver(door), !!window.__salidaV2).puerta;
     html += `<h3>${T.salida().titulo} ${puerta}</h3><p>${T.salida().desc}</p><div class="sdt-line">🚪 <b>${T.salida().corto}: ${puerta}</b></div>`;
+    extraBtns = `<button type="button" class="sub-fin">${UI[currentLang].btnSalido}</button>`;
   } else if (tipo === 'ps') {
     html += `<h3>${S.parkingT}</h3><p>${S.psParking.replace(' ▶', '')}</p>`;
   } else if (fase === 1 && sub === 0) {
@@ -2903,6 +2943,7 @@ function renderGenerico(data) {
   } else {
     const puerta = geoRutaSalida(geoResolver(door), !!window.__salidaV2).puerta;
     html += `<h3>${T.salida().titulo} ${puerta}</h3><ol><li>${R.llaves.pasos[3]}</li></ol><div class="sdt-line">🚪 <b>${T.salida().corto}: ${puerta}</b></div>`;
+    extraBtns = `<button type="button" class="sub-fin">${UI[currentLang].btnSalido}</button>`;
   }
   if (nSub > 1 && (sub > 0 || btnNext || extraBtns)) {
     html += '<div class="sub-nav">';
@@ -2913,6 +2954,7 @@ function renderGenerico(data) {
   stepsDiv.innerHTML = html;
   mapWrap.classList.add('show');
   geoMostrar(fase, door, !!window.__salidaV2, sub);
+  if (fase >= 1 && door) geoPedirConsentimiento(camion);
   renderFeedback((fase === 3 && sub === nSub - 1) || (tipo === 'ps' && sub >= 2));
   if (fase !== window.__ultimaFasePresencia) { window.__ultimaFasePresencia = fase; enviarPresencia(); }
 }
@@ -3163,7 +3205,7 @@ function iniciarRecorrido(camion) {
   document.getElementById('btnAssist').style.display = 'block';
   pintarAsistencia();
   comprobarAsistencia();
-  geoPedirConsentimiento(camion);
+  // La ubicacion se pide mas tarde, cuando garita ya le ha dado destino (fase >= 1): asi no se pregunta fuera del recinto.
 }
 
 function renderTodo() {
@@ -3330,6 +3372,52 @@ pintarTextosEstaticos();
 
 /* Modo producción: el QR lleva directamente a ?vr=CODIGO, sin pasar por el desplegable.
    También soporta ?lang=XX para preseleccionar idioma (opcional, si el generador lo incluye). */
+/* ===== ACCESO: solo con el camion acreditado en garita (existe en Firebase, < 24 h) y hasta que se le da salida ===== */
+const ACRED_MAX_MS = 24 * 60 * 60 * 1000;
+let acredTimer = null;
+function mostrarBloqueo(tipo, vrId) {
+  const t = UI[currentLang], en = UI.en;
+  const fin = tipo === 'fin';
+  document.getElementById('lockVr').textContent = vrId || '';
+  document.getElementById('lockIcon').textContent = fin ? '✅' : '🔒';
+  document.getElementById('lockT').textContent = fin ? t.lockFinT : t.lockAcredT;
+  document.getElementById('lockD').textContent = fin ? t.lockFinD : t.lockAcredD;
+  document.getElementById('lockEn').textContent = currentLang === 'en' ? '' : (fin ? en.lockFinD : en.lockAcredD);
+  document.getElementById('lockOverlay').style.display = 'flex';
+}
+function ocultarBloqueo() { document.getElementById('lockOverlay').style.display = 'none'; }
+function estaAcreditado(data) { return !!(data && data.ts && Date.now() - data.ts < ACRED_MAX_MS && !data.fin); }
+function verificarAcreditacion(vrId) {
+  clearTimeout(acredTimer);
+  const finLocal = Number(localStorage.getItem('bcn1_fin_' + vrId)) || 0;
+  if (finLocal) mostrarBloqueo('fin', vrId);
+  fetch(`${TOMYARD_URL}/trucks/${encodeURIComponent(vrId)}.json`, { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && data.fin) { finalizarRecorrido(false); return; }
+      if (finLocal) {
+        // El panel ha reabierto el enlace despues de que el conductor lo cerrara
+        if (data && data.reopenTs && data.reopenTs > finLocal) localStorage.removeItem('bcn1_fin_' + vrId);
+        else { acredTimer = setTimeout(() => verificarAcreditacion(vrId), 15000); return; }
+      }
+      if (estaAcreditado(data)) { ocultarBloqueo(); return; }
+      mostrarBloqueo('acred', vrId);
+      acredTimer = setTimeout(() => verificarAcreditacion(vrId), 15000);
+    })
+    .catch(() => { mostrarBloqueo('acred', vrId); acredTimer = setTimeout(() => verificarAcreditacion(vrId), 15000); });
+}
+/* Fin del recorrido: lo marca el conductor (boton), el panel (campo fin) o la salida del recinto con GPS. Desde entonces el enlace queda cerrado en este movil. */
+function finalizarRecorrido(avisarServidor) {
+  const vrId = window.__vrFromUrl || (window.__camionActual && window.__camionActual.vrId);
+  if (!vrId) return;
+  localStorage.setItem('bcn1_fin_' + vrId, String(Date.now()));
+  clearInterval(tomYardInterval); clearInterval(presenciaInterval); clearTimeout(acredTimer);
+  if (typeof geoParar === 'function') { geoParar(); if (geoRecheck) { clearInterval(geoRecheck); geoRecheck = null; } }
+  ocultarLlamada();
+  ['geoOverlay', 'assistOverlay'].forEach(id => document.getElementById(id).style.display = 'none');
+  if (avisarServidor) fetch(`${TOMYARD_URL}/presence/${encodeURIComponent(vrId)}.json`, { method: 'PATCH', body: JSON.stringify({ ts: Date.now(), fase: 4 }) }).catch(() => {});
+  mostrarBloqueo('fin', vrId);
+}
 function comprobarUrl() {
   const params = new URLSearchParams(window.location.search);
   const langFromUrl = params.get('lang');
@@ -3355,6 +3443,7 @@ function comprobarUrl() {
     }
     // Pantalla de inicio en produccion: VRID fijo (sin desplegable), seleccion de idioma y boton para empezar.
     window.__vrFromUrl = codeFromUrl;
+    if (camiones[codeFromUrl].esGenerico) verificarAcreditacion(codeFromUrl);
     document.getElementById('destino').style.display = 'none';
     document.getElementById('txtModoNota').style.display = 'none';
     const vf = document.getElementById('vrFixed');
@@ -3609,9 +3698,35 @@ document.getElementById('btnGeoNo').addEventListener('click', () => {
   const c = window.__camionActual; if (c) localStorage.setItem('bcn1_geo_' + c.vrId, 'no');
   document.getElementById('geoOverlay').style.display = 'none';
 });
+let geoRecheck = null, geoEstuvoDentro = false;
+function geoChip(dentro) {
+  const el = document.getElementById('geoChip'), t = UI[currentLang];
+  if (dentro === null) { el.style.display = 'none'; return; }
+  el.style.display = 'block'; el.className = dentro ? '' : 'out';
+  el.textContent = dentro ? (t.geoChipIn || '') : (t.geoChipOut || '');
+}
 function geoEmpezar() {
-  if (geoWatchId !== null || !navigator.geolocation) return;
+  if (geoWatchId !== null || geoRecheck || !navigator.geolocation) return;
   geoWatchId = navigator.geolocation.watchPosition(geoPosicion, geoError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+}
+function geoParar() {
+  if (geoWatchId !== null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
+  if (geoMeMarker) { geoMap.removeLayer(geoMeMarker); geoMap.removeLayer(geoMeCircle); geoMeMarker = geoMeCircle = null; }
+}
+/* Fuera del recinto: se deja de seguir y solo se mira una vez cada 60 s si ya ha entrado (sin registrar nada) */
+function geoFuera() {
+  geoParar(); geoChip(false);
+  if (geoEstuvoDentro && window.__camionActual && window.__camionActual.esGenerico) {
+    const data = window.__tomYardLastData, door = data && data.door ? String(data.door) : '';
+    const fase = faseDesdeEstado(data), sub = subPasoActual(window.__camionActual.vrId, fase, door), tipo = tipoDestino(door);
+    if ((fase === 3 && sub === 2) || (tipo === 'ps' && sub === 2)) { finalizarRecorrido(true); return; }
+  }
+  if (geoRecheck) return;
+  geoRecheck = setInterval(() => {
+    navigator.geolocation.getCurrentPosition(pos => {
+      if (geoDentro(pos.coords.latitude, pos.coords.longitude)) { clearInterval(geoRecheck); geoRecheck = null; geoEmpezar(); }
+    }, () => {}, { enableHighAccuracy: false, maximumAge: 30000, timeout: 15000 });
+  }, 60000);
 }
 function geoError(e) {
   if (e && e.code === 1) { // denegado por el sistema
@@ -3628,7 +3743,8 @@ function geoPosicion(pos) {
     geoMeMarker = L.marker(ll, { interactive: false, zIndexOffset: 1000, icon: L.divIcon({ className: 'geo-dot', iconSize: [18, 18] }) }).addTo(geoMap);
     geoMeCircle = L.circle(ll, { radius: acc, color: '#1a73e8', weight: 1, fillOpacity: .12, interactive: false }).addTo(geoMap);
   } else { geoMeMarker.setLatLng(ll); geoMeCircle.setLatLng(ll).setRadius(acc); }
-  if (!geoDentro(lat, lon)) return; // fuera del recinto: no se guarda nada
+  if (!geoDentro(lat, lon)) { geoFuera(); return; } // fuera del recinto: no se guarda nada y se deja de seguir
+  geoEstuvoDentro = true; geoChip(true);
   const c = window.__camionActual; if (!c) return;
   const now = Date.now();
   if (geoLastSent && now - geoLastSent.ts < 10000 && geoDist([geoLastSent.lat, geoLastSent.lon], ll) < 5) return;
