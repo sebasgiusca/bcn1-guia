@@ -96,6 +96,8 @@
   #map { position: absolute; inset: 0; z-index: 1; background: #1b2430; }
   .map-wrap .map-controls { z-index: 1000; }
   .map-wrap .map-hint { z-index: 1000; }
+  .leaflet-control-attribution { font-size: 9px; background: rgba(0,0,0,.45) !important; color: #cfd3da !important; padding: 1px 5px; }
+  .leaflet-control-attribution a { color: #cfd3da !important; }
   .geo-lbl { background: rgba(0,0,0,.7); color: #fff; font-size: 10px; padding: 1px 4px; border-radius: 3px; border: 0; box-shadow: none; white-space: nowrap; }
   .geo-lbl.big { font-size: 13px; font-weight: 800; background: #0b57d0; }
   .geo-lbl.poi { font-size: 11px; font-weight: 700; background: #b3261e; }
@@ -2794,7 +2796,10 @@ function pintarGateSeguridad(camion) {
 document.getElementById('btnAceptarNormas').addEventListener('click', () => {
   const camion = window.__pendingCamion;
   if (!camion) return;
-  localStorage.setItem('bcn1_accept_' + camion.vrId, JSON.stringify({ ts: Date.now(), lang: currentLang }));
+  const acceptTs = Date.now();
+  localStorage.setItem('bcn1_accept_' + camion.vrId, JSON.stringify({ ts: acceptTs, lang: currentLang }));
+  // Constancia en el panel: quien ha aceptado las normas de seguridad, cuando y en que idioma (solo codigo del camion, sin datos personales)
+  if (camion.esGenerico) fetch(`${TOMYARD_URL}/presence/${encodeURIComponent(camion.vrId)}.json`, { method: 'PATCH', body: JSON.stringify({ ts: acceptTs, acceptTs, acceptLang: currentLang }) }).catch(() => {});
   document.getElementById('safetyGate').style.display = 'none';
   iniciarRecorrido(camion);
 });
@@ -3603,8 +3608,13 @@ function geoInit() {
   if (geoMap || typeof L === 'undefined') return;
   // El mapa se limita al recinto de BCN1 (GEO_BBOX con un pequeno margen): no se puede arrastrar fuera ni alejar mas de lo que cabe el site.
   const siteBounds = L.latLngBounds([GEO_BBOX.latMin, GEO_BBOX.lonMin], [GEO_BBOX.latMax, GEO_BBOX.lonMax]).pad(0.12);
-  geoMap = L.map('map', { maxZoom: 21, zoomControl: true, attributionControl: false, maxBounds: siteBounds, maxBoundsViscosity: 1.0, zoomSnap: 0.25 });
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 19, bounds: siteBounds }).addTo(geoMap);
+  geoMap = L.map('map', { maxZoom: 21, zoomControl: true, attributionControl: true, maxBounds: siteBounds, maxBoundsViscosity: 1.0, zoomSnap: 0.25 });
+  geoMap.attributionControl.setPrefix('');
+  // Ortofoto del ICGC (Institut Cartografic i Geologic de Catalunya, datos abiertos CC BY 4.0): mas nitida que Esri en BCN1
+  // y con detalle real hasta el zoom 20. Si una tesela falla, se muestra la de Esri (World Imagery) en su lugar.
+  const esriUrl = (c) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${Math.min(c.z, 19)}/${c.y}/${c.x}`;
+  const orto = L.tileLayer('https://geoserveis.icgc.cat/icc_mapesmultibase/noutm/wmts/orto/GRID3857/{z}/{x}/{y}.jpeg', { maxZoom: 21, maxNativeZoom: 20, bounds: siteBounds, attribution: '&copy; ICGC' }).addTo(geoMap);
+  orto.on('tileerror', (e) => { try { if (e.tile && !e.tile.__esri) { e.tile.__esri = true; e.tile.src = esriUrl(e.coords); } } catch (x) {} });
   const ajustarMinZoom = () => { try { geoMap.setMinZoom(geoMap.getBoundsZoom(siteBounds, true)); } catch (e) {} };
   ajustarMinZoom();
   geoMap.on('resize', ajustarMinZoom);

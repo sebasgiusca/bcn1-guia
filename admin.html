@@ -118,7 +118,7 @@
       </div>
       <div class="hint">Un conductor cuenta como "usuario" cuando abre la guía con su QR y acepta las normas. Punto verde = guía abierta en los últimos 90 s.</div>
       <div class="filters"><label><input type="checkbox" id="uOld"> Mostrar más de 7 días</label> <span id="uLangs"></span></div>
-      <table><thead><tr><th></th><th>VRID</th><th>Primera apertura</th><th>Última actividad</th><th>Fase alcanzada</th><th>Idioma</th><th>Valoró</th><th>Pidió ayuda</th></tr></thead>
+      <table><thead><tr><th></th><th>VRID</th><th>Primera apertura</th><th>Última actividad</th><th>Fase alcanzada</th><th>Idioma</th><th>Normas</th><th>Valoró</th><th>Pidió ayuda</th></tr></thead>
       <tbody id="tbUso"></tbody></table>
       <div class="empty" id="eUso" style="display:none">Todavía ningún conductor ha abierto la guía.</div>
     </section>
@@ -149,7 +149,7 @@
       <div class="hint">La guía del conductor solo se abre si su VRID está aquí (acreditado en garita, &lt; 24 h). "Dar salida" cierra su enlace; también se cierra solo cuando el conductor pulsa "He salido" o el GPS le ve fuera del recinto.</div>
       <div class="filters"><label><input type="checkbox" id="fOld"> Mostrar también antiguos (&gt; 24 h)</label></div>
       <table><thead><tr>
-        <th></th><th>VRID</th><th>Fase</th><th>Muelle</th><th>Carga</th><th>Estado ODM</th><th>Salida prog.</th><th>Llamado</th><th>Última act.</th><th></th>
+        <th></th><th>VRID</th><th>Fase</th><th>Muelle</th><th>Carga</th><th>Estado ODM</th><th>Salida prog.</th><th>Normas</th><th>Llamado</th><th>Última act.</th><th></th>
       </tr></thead>
       <tbody id="tbody"></tbody></table>
       <div class="empty" id="empty" style="display:none">Sin datos todavía. Abre ODM con el userscript Tom-Yard instalado.</div>
@@ -216,6 +216,13 @@ function fecha(ts) { return ts ? new Date(ts).toLocaleString('es-ES', { day: '2-
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function esHoy(ts) { return ts && new Date(ts).toDateString() === new Date().toDateString(); }
 function online(vr) { const p = D.presence[vr]; return !!(p && p.ts && Date.now() - p.ts < PRESENCIA_ON_MS); }
+// Aceptacion de las normas de seguridad de Amazon (la guia la escribe en /presence/{vrid}.acceptTs al pulsar "He leido y acepto")
+function normas(vr) {
+  const p = D.presence[vr];
+  if (!p || !p.acceptTs) return '<span class="old" title="Todavia no ha aceptado las normas de seguridad en la guia">&mdash;</span>';
+  const f = new Date(p.acceptTs).toLocaleString('es-ES');
+  return `<span title="Normas de seguridad aceptadas el ${f}${p.acceptLang ? ' (' + p.acceptLang.toUpperCase() + ')' : ''}" style="color:#3ddc97;font-weight:700">&#9989; ${hora(p.acceptTs)}</span>`;
+}
 function dot(vr) { const p = D.presence[vr]; return `<span class="dot ${online(vr) ? 'on' : ''}" title="${p ? 'Guía abierta ' + hace(p.ts) : 'Nunca abrió la guía'}"></span>`; }
 function guiaLink(vr) { return `<span class="vr">${esc(vr)}</span><a class="guide" href="${GUIDE}?vr=${encodeURIComponent(vr)}" target="_blank" title="Abrir guía del conductor">guía ↗</a>`; }
 
@@ -334,6 +341,7 @@ function renderUso() {
       <td class="old" title="${p.ts ? new Date(p.ts).toLocaleString('es-ES') : ''}">${hace(p.ts)}</td>
       <td><span class="fase f${p.fase || 0}">${FASE_GUIA[p.fase || 0]}</span></td>
       <td><span class="lang">${esc(p.lang || '')}</span></td>
+      <td>${normas(p.vr)}</td>
       <td>${fb ? `<span class="face">${['', '😕', '😐', '😊'][fb.rating] || ''}</span>` : '—'}</td>
       <td>${as ? `<span class="lvl ${esc(as.level)}">${esc(as.level)}</span>${as.resolved ? ' ✓' : ''}` : '—'}</td>`;
     tb.appendChild(tr);
@@ -504,6 +512,7 @@ function render(all) {
       <td>${fill === null ? '—' : `<span class="bar"><i style="width:${Math.min(100, fill)}%"></i></span>${fill}%`}</td>
       <td>${esc((d.status || '—').replace(/_/g, ' ').toLowerCase())}</td>
       <td>${esc(d.sdt || '—')}</td>
+      <td>${normas(d.vr)}</td>
       <td>${d.called ? `🔔 ${hora(d.calledTs)}` : '—'}</td>
       <td class="old" title="${d.ts ? new Date(d.ts).toLocaleString('es-ES') : ''}">${hace(d.ts)}</td>
       <td style="white-space:nowrap">
