@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BCN1 - Guía para camioneros</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="css/estilos.css?v=20261006a">
+</head>
+<body>
+
+<header>
+  <!-- Logo retirado 05/10 (Google Safe Browsing marcaba el sitio como suplantacion de marca en un dominio github.io). Se puede recuperar desde el historial. -->
+  <button type="button" class="lang-chip" id="langChip" style="display:none" aria-label="Idioma"></button>
+  <span id="txtHeaderTitle"></span>
+</header>
+
+<div class="toca-idioma" id="txtTocaIdioma" style="display:none"></div>
+<div class="lang-bar" id="langBar"></div>
+
+<div class="panel" id="panelManual">
+  <label for="destino" id="lblDestino"></label>
+  <select id="destino"></select>
+  <div class="vr-fixed" id="vrFixed" style="display:none"></div>
+  <button id="btnVer"></button>
+  <div class="modo-nota" id="txtModoNota"></div>
+</div>
+
+<div class="safety-gate" id="safetyGate" style="display:none;">
+  <div class="gate-vrid" id="gateVridLine"></div>
+  <div class="gate-map">
+    <img src="mapa.png" alt="Mapa BCN1">
+    <div class="gate-map-caption" id="gateMapCaption"></div>
+  </div>
+  <div class="safety" id="safetyBlock">
+    <h4 id="safetyTitle"></h4>
+    <p class="safety-header" id="safetyHeader"></p>
+    <ol id="safetyList"></ol>
+    <p class="safety-footer" id="safetyFooter"></p>
+  </div>
+  <button type="button" id="btnAceptarNormas" class="btn-confirmar"></button>
+</div>
+
+<div class="stepper" id="stepper"></div>
+
+<div class="map-wrap" id="mapWrap">
+  <div class="map-hint" id="txtMapHint"></div>
+  <div id="navBanner" style="display:none"><div class="nav-ico">↑</div><div class="nav-txt"><div class="nav-dist"></div><div class="nav-ins"></div></div></div>
+  <div class="map-controls">
+    <button id="navRec" type="button" style="display:none" title="Traza GPS">&#9210;</button>
+    <button id="navVoz" type="button">&#128266;</button>
+    <button id="navFollow" type="button">&#10148;</button>
+    <button id="zoomReset" type="button" title="Centrar">&#8982;</button>
+    <div id="geoChip" style="display:none"></div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<div class="steps" id="steps"></div>
+<div class="tomyard-box" id="tomYardBox" style="display:none"></div>
+<div class="fb-box" id="fbBox" style="display:none"></div>
+<button type="button" id="btnAssist" style="display:none"></button>
+<div id="geoOverlay" style="display:none"><div class="assist-card">
+  <div class="assist-title" id="geoTitulo"></div>
+  <div class="assist-desc" id="geoDesc"></div>
+  <div class="assist-row"><button type="button" id="btnGeoOk" class="as-send"></button><button type="button" id="btnGeoNo" class="as-cancel"></button></div>
+</div></div>
+<div id="assistOverlay" style="display:none"><div class="assist-card">
+  <div class="assist-title" id="asTitulo"></div>
+  <div class="assist-desc" id="asDesc"></div>
+  <div class="assist-levels" id="asLevels"></div>
+  <textarea id="asNota" rows="2" maxlength="300"></textarea>
+  <div class="assist-row"><button type="button" id="btnAsEnviar" class="as-send" disabled></button><button type="button" id="btnAsCancelar" class="as-cancel"></button></div>
+</div></div>
+<div id="lockOverlay" style="display:none"><div class="lock-card"><div class="lock-vr" id="lockVr"></div><div class="lock-icon" id="lockIcon"></div><div class="assist-title" id="lockT"></div><div class="assist-desc" id="lockD"></div><div class="lock-en" id="lockEn"></div></div></div>
+<div id="callOverlay" style="display:none"><div class="call-card"><div class="call-title" id="callTitulo"></div><div class="call-desc" id="callDesc"></div><button type="button" id="btnCallOk"></button></div></div>
+
+<div class="demo-controls" id="demoControls" style="display:none;">
+  <button id="btnAnterior"></button>
+  <button id="btnSiguiente"></button>
+</div>
+
+
+<div class="disclaimer" id="txtDisclaimer"></div>
+
+<!-- Orden importante: config e idiomas primero; guia.js el ultimo (arranca la pagina). Sube el ?v= al publicar para que los moviles no usen una copia vieja. -->
+<script src="js/config.js?v=20261006a"></script>
+<script src="js/idiomas/index.js?v=20261006a"></script>
+<script src="js/idiomas/es.js?v=20261006a"></script>
+<script src="js/idiomas/en.js?v=20261006a"></script>
+<script src="js/idiomas/fr.js?v=20261006a"></script>
+<script src="js/idiomas/ro.js?v=20261006a"></script>
+<script src="js/idiomas/de.js?v=20261006a"></script>
+<script src="js/idiomas/it.js?v=20261006a"></script>
+<script src="js/idiomas/tr.js?v=20261006a"></script>
+<script src="js/idiomas/ar.js?v=20261006a"></script>
+<script src="js/idiomas/bg.js?v=20261006a"></script>
+<script src="js/idiomas/pl.js?v=20261006a"></script>
+<script src="js/idiomas/ru.js?v=20261006a"></script>
+<script src="js/idiomas/uk.js?v=20261006a"></script>
+<script src="js/demo.js?v=20261006a"></script>
+<script src="js/mapa.js?v=20261006a"></script>
+<script src="js/ubicacion.js?v=20261006a"></script>
+<script src="js/navegacion.js?v=20261006a"></script>
+<script src="js/guia.js?v=20261006a"></script>
+
+</body>
+</html>
