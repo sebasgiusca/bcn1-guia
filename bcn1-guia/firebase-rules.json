@@ -1,0 +1,43 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "trucks": {
+      "$vrid": { ".read": true, ".write": false }
+    },
+    "config": {
+      ".read": true,
+      ".write": false
+    },
+    "presence": {
+      "$vrid": {
+        ".read": false,
+        ".write": true,
+        ".validate": "newData.hasChildren(['ts']) && newData.child('ts').isNumber() && (!newData.hasChild('lang') || newData.child('lang').isString()) && (!newData.hasChild('fase') || newData.child('fase').isNumber()) && (!newData.hasChild('firstTs') || newData.child('firstTs').isNumber())"
+      }
+    },
+    "feedback": {
+      "$vrid": {
+        ".read": false,
+        ".write": true,
+        ".validate": "newData.hasChildren(['ts','rating']) && newData.child('ts').isNumber() && newData.child('rating').isNumber() && newData.child('rating').val() >= 1 && newData.child('rating').val() <= 3 && (!newData.hasChild('comment') || (newData.child('comment').isString() && newData.child('comment').val().length <= 600)) && (!newData.hasChild('lang') || newData.child('lang').isString())"
+      }
+    },
+    "assist": {
+      "$vrid": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['ts','level']) && newData.child('ts').isNumber() && (newData.child('level').val() == 'leve' || newData.child('level').val() == 'moderado' || newData.child('level').val() == 'urgente') && (!newData.hasChild('note') || (newData.child('note').isString() && newData.child('note').val().length <= 300)) && (!newData.hasChild('door') || newData.child('door').isString()) && (!newData.hasChild('resolved') || newData.child('resolved').isBoolean()) && (!newData.hasChild('resolvedTs') || newData.child('resolvedTs').isNumber()) && (!newData.hasChild('lang') || newData.child('lang').isString())"
+      }
+    },
+    "track": {
+      "$vrid": {
+        ".read": false,
+        "$ts": {
+          ".write": "!data.exists()",
+          ".validate": "newData.hasChildren(['lat','lon','ts']) && newData.child('lat').isNumber() && newData.child('lon').isNumber() && newData.child('ts').isNumber() && newData.child('lat').val() >= 41.3115 && newData.child('lat').val() <= 41.3170 && newData.child('lon').val() >= 2.0715 && newData.child('lon').val() <= 2.0800 && (!newData.hasChild('acc') || newData.child('acc').isNumber())"
+        }
+      }
+    }
+  }
+}

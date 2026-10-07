@@ -1,0 +1,19 @@
+Guia BCN1 para camioneros - estructura de archivos
+==================================================
+
+index.html            Solo la estructura de la pagina (cabecera, pantallas, botones). Casi nunca hay que tocarlo.
+css/estilos.css       Todo el aspecto. Los COLORES estan arriba en :root (--acento, --fondo, --panel...): cambia uno ahi y cambia en toda la guia.
+js/config.js          Direccion de Firebase, horas de validez de la acreditacion, cada cuanto consulta el movil.
+js/idiomas/index.js   Lista de idiomas, nombres y banderas. Para anadir un idioma: copiar js/idiomas/es.js, traducirlo, anadir el codigo aqui y su <script> en index.html.
+js/idiomas/xx.js      Un archivo por idioma: textos de pantalla (UI) + normas y pasos del recorrido (STEP_TEXT).
+js/demo.js            Camiones de ejemplo del modo prueba (sin ?vr= en la URL). No afecta al uso real.
+js/mapa.js            Coordenadas de garitas, muelles, virtuales, precheck y rutas del mapa.
+js/ubicacion.js       GPS del conductor (permiso por viaje, solo dentro del recinto).
+js/navegacion.js      Navegacion tipo Google Maps: el mapa sigue al camion, avisa por voz en cada giro y al llegar.
+                      ?simular=1 recorre la ruta con GPS ficticio (para probar en el PC). ?grabar=1 graba la traza GPS
+                      real cada 2 s y la descarga en .json (para pasar las coordenadas de los carriles a mapa.js).
+js/guia.js            La logica: fases, acceso, normas, Firebase, llamadas, presencia, asistencia. Es el que arranca la pagina (va el ultimo).
+
+Al publicar en GitHub: subir la carpeta ENTERA (index.html + css + js) y cambiar el ?v=AAAAMMDDx de index.html
+para que los moviles no usen una copia antigua en cache.
+Nunca poner aqui claves/secretos de Firebase, Sesame o Yard: esta web es publica.
