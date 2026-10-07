@@ -91,6 +91,13 @@ function geoRutaSalida(d, v2) {
   const ps = geoProj(tr.carrilSalida, d.ll);
   return { pts: [d.ll, ps.p, ...tr.carrilSalida.slice(ps.i + 1), ...tr.lazoSur], puerta: 'V0' };
 }
+/* Ruta de un destino a otro dentro del recinto (p.ej. la tractora que, tras soltar el remolque en un virtual, vuelve al precheck):
+   salida del origen hasta V0, reentrada por el sur y ruta de entrada normal al nuevo destino */
+function geoRutaEntre(o, d) {
+  const tr = GEO_TRAMOS;
+  if (!o || !d) return geoRutaEntrada(d);
+  return [...geoRutaSalida(o, false).pts, ...tr.reentradaSur, ...geoRutaEntrada(d)];
+}
 /* Ruta desde una plaza virtual hasta la zona de espera de tractoras */
 function geoRutaParking(d) {
   const tr = GEO_TRAMOS, park = GEO_POIS.parkingTract;
@@ -126,8 +133,9 @@ function geoInit() {
   geoMap.setView([41.3143, 2.0757], 17);
   setTimeout(() => geoMap.invalidateSize(), 50);
 }
-function geoLbl(ll, txt, cls) { return L.marker(ll, { interactive: false, icon: L.divIcon({ className: '', iconSize: [0, 0] }) }).bindTooltip(txt, { permanent: true, direction: 'top', className: 'geo-lbl ' + (cls || ''), offset: [0, -6] }); }
-function geoPin(ll, color, txt, cls) { const m = L.circleMarker(ll, { radius: 9, color: '#fff', fillColor: color, fillOpacity: 1, weight: 3, interactive: false }); if (txt) m.bindTooltip(txt, { permanent: true, direction: 'top', className: 'geo-lbl ' + (cls || 'big'), offset: [0, -8] }); return m; }
+const geoLblHtml = txt => `<span class="lbl-in">${txt}</span>`; // el span se contra-rota cuando la navegacion gira el mapa
+function geoLbl(ll, txt, cls) { return L.marker(ll, { interactive: false, icon: L.divIcon({ className: '', iconSize: [0, 0] }) }).bindTooltip(geoLblHtml(txt), { permanent: true, direction: 'top', className: 'geo-lbl ' + (cls || ''), offset: [0, -6] }); }
+function geoPin(ll, color, txt, cls) { const m = L.circleMarker(ll, { radius: 9, color: '#fff', fillColor: color, fillOpacity: 1, weight: 3, interactive: false }); if (txt) m.bindTooltip(geoLblHtml(txt), { permanent: true, direction: 'top', className: 'geo-lbl ' + (cls || 'big'), offset: [0, -8] }); return m; }
 function geoFit(pts) {
   if (!geoMap || !pts.length) return;
   geoLastBounds = L.latLngBounds(pts.map(p => L.latLng(p[0], p[1]))).pad(0.25);
@@ -138,7 +146,7 @@ function geoFit(pts) {
 }
 /* Dibuja la situacion segun la fase real: 0 garita, 1 ir al muelle, 2 sala de espera, 3 llaves y salida.
    dest: codigo (door del ODM). v2: salida por V2 activada por el OM. */
-function geoMostrar(fase, destCode, v2, sub) {
+function geoMostrar(fase, destCode, v2, sub, desdeCode) {
   geoInit(); if (!geoMap) return;
   geoDyn.clearLayers();
   sub = sub || 0;
@@ -150,7 +158,15 @@ function geoMostrar(fase, destCode, v2, sub) {
   const GRIS = '#6b7280', NAR = '#ff9900', AZUL = '#0b57d0', ROJO = '#e53935';
   let pts = [GEO_FIJO.garitaV0];
   const tipo = d ? d.tipo : null;
-  if (fase >= 1 && d && d.rapido && sub === 0) {
+  const o = desdeCode ? geoResolver(desdeCode) : null;
+  if (fase >= 1 && d && o) {
+    // Segundo tramo con la tractora: desde donde ha soltado el remolque hasta su propio destino
+    const r = geoRutaEntre(o, d);
+    geoDyn.addLayer(geoPin(o.ll, GRIS, o.txt, 'poi'));
+    geoDyn.addLayer(L.polyline(r, { color: '#1db954', weight: 6, opacity: .95, interactive: false }));
+    geoDyn.addLayer(geoPin(d.ll, NAR, d.txt));
+    pts = r;
+  } else if (fase >= 1 && d && d.rapido && sub === 0) {
     const r = geoRutaEntrada(d);
     geoDyn.addLayer(geoPin(GEO_FIJO.garitaV0, GRIS, lblGarita, 'poi'));
     geoDyn.addLayer(L.polyline(r, { color: '#1db954', weight: 6, opacity: .95, interactive: false }));
@@ -168,21 +184,13 @@ function geoMostrar(fase, destCode, v2, sub) {
     geoDyn.addLayer(L.polyline(r, { color: '#1db954', weight: 6, opacity: .95, interactive: false }));
     geoDyn.addLayer(geoPin(d.ll, NAR, d.txt));
     pts = r;
-  } else if (fase >= 1 && d && tipo === 'ps' && sub === 1) {
-    geoDyn.addLayer(geoPin(d.ll, NAR, d.txt));
-    pts = [d.ll, GEO_FIJO.garitaV0];
-  } else if (fase >= 1 && d && tipo === 'ps' && sub === 2) {
+  } else if (fase >= 1 && d && tipo === 'ps') {
+    // Remolque ya suelto y la tractora sin destino propio: salida del recinto
     const sal = geoRutaSalida(d, !!v2);
     geoDyn.addLayer(geoPin(d.ll, GRIS, d.txt, 'poi'));
     geoDyn.addLayer(L.polyline(sal.pts, { color: ROJO, weight: 6, opacity: .95, dashArray: '12 10', interactive: false }));
     geoDyn.addLayer(geoPin(sal.pts[sal.pts.length - 1], ROJO, T.salida().corto + ' ' + sal.puerta, 'poi'));
     pts = sal.pts;
-  } else if (fase >= 1 && d && tipo === 'ps') {
-    const r = geoRutaParking(d);
-    geoDyn.addLayer(geoPin(d.ll, GRIS, d.txt, 'poi'));
-    geoDyn.addLayer(L.polyline(r, { color: '#1db954', weight: 6, opacity: .95, interactive: false }));
-    geoDyn.addLayer(geoPin(r[r.length - 1], AZUL, UI[currentLang].sub.parkingT));
-    pts = r;
   } else if (fase === 0 || (fase === 1 && sub === 0)) {
     geoDyn.addLayer(geoPin(GEO_FIJO.garitaV0, GRIS, lblGarita, 'poi'));
     if (d) {

@@ -19,7 +19,10 @@ const NAV_VOZ_LANG = { es: 'es-ES', en: 'en-GB', fr: 'fr-FR', ro: 'ro-RO', de: '
 let navRuta = null;        // { pts, dest, maniobras: [{idx, dAcum, tipo, ll}], total }
 let navEstado = null;      // { prox (indice de maniobra), avisado: {lejos, cerca}, llegado, ultFuera }
 let navFollow = true, navFollowPausaHasta = 0, navVoz = localStorage.getItem('bcn1_nav_voz') !== 'off';
-let navUltPos = null, navRumbo = null;
+let navUltPos = null, navRumbo = null, navRotActual = 0;
+const NAV_ZOOM = 19;            // zoom al seguir al camion
+const NAV_ADELANTO_M = 38;      // el camion se pinta en el tercio inferior: el centro del mapa va este trecho por delante
+const NAV_ROT_MIN_GRADOS = 6;   // no se gira el mapa por cambios de rumbo menores (evita temblor)
 const navParams = new URLSearchParams(location.search);
 const NAV_SIMULAR = navParams.get('simular') === '1', NAV_GRABAR = navParams.get('grabar') === '1';
 
@@ -68,10 +71,14 @@ function navOnPos(lat, lon, acc, headingGps) {
   navUltPos = ll;
   navActualizarFlecha();
   if (navFollow && geoMap && Date.now() > navFollowPausaHasta) {
+    navRotar(navRumbo);
+    // el centro del mapa va unos metros por delante del camion (en su rumbo) para que se vea lo que viene
+    const r = (navRumbo == null ? 0 : navRumbo) * Math.PI / 180;
+    const centro = navRumbo == null ? ll : geoMove(ll, [Math.cos(r) / GEO_M_LAT, Math.sin(r) / GEO_M_LON], NAV_ADELANTO_M);
     // setView animado con cambio de zoom se pisa a si mismo al llamarlo cada segundo; el zoom se fija sin animar y luego solo se desplaza
-    const z = Math.max(geoMap.getZoom(), 18.5);
-    if (Math.abs(geoMap.getZoom() - z) > 0.01) geoMap.setView(ll, z, { animate: false }); else geoMap.panTo(ll, { animate: true, duration: .5 });
-  }
+    const z = Math.max(geoMap.getZoom(), NAV_ZOOM);
+    if (Math.abs(geoMap.getZoom() - z) > 0.01) geoMap.setView(centro, z, { animate: false }); else geoMap.panTo(centro, { animate: true, duration: .5 });
+  } else navRotar(null);
   if (NAV_GRABAR) navGrabarPunto(lat, lon, acc);
   if (!navRuta || !navEstado || navEstado.llegado) return;
   const pr = geoProj(navRuta.pts, ll);               // punto mas cercano del carril
@@ -100,11 +107,29 @@ function navOnPos(lat, lon, acc, headingGps) {
 }
 function navRedondear(m) { return m >= 100 ? Math.round(m / 50) * 50 : Math.round(m / 10) * 10 || 10; }
 
+/* Giro del mapa: el contenedor #map es mas grande que la ventana (160%) y se rota con CSS para que el rumbo quede arriba;
+   las etiquetas y el punto se contra-rotan para seguir leyendose derechas. null = sin giro (norte arriba). */
+function navRotar(rumbo) {
+  const m = document.getElementById('map'); if (!m) return;
+  // el angulo se lleva de forma continua (sin saltar de -359 a 0) para que la transicion CSS gire por el camino corto
+  const objetivo = rumbo == null ? 0 : -rumbo;
+  const delta = ((objetivo - navRotActual) % 360 + 540) % 360 - 180;
+  if (rumbo != null && Math.abs(delta) < NAV_ROT_MIN_GRADOS) return;
+  navRotActual += delta; const dest = navRotActual;
+  const wrap = document.getElementById('mapWrap'), teniaRot = m.classList.contains('rot');
+  m.classList.toggle('rot', rumbo != null);
+  m.style.setProperty('--mapRot', dest + 'deg');
+  if (wrap) wrap.style.setProperty('--mapRot', dest + 'deg');
+  if (teniaRot !== (rumbo != null) && geoMap) setTimeout(() => geoMap.invalidateSize({ animate: false }), 50);
+}
 /* Pancarta encima del mapa */
 function navPintar(ind) {
   const b = document.getElementById('navBanner'); if (!b) return;
-  const hint = document.getElementById('txtMapHint');
-  if (!ind) { b.style.display = 'none'; if (hint) hint.style.display = ''; return; }
+  const hint = document.getElementById('txtMapHint'), wrap = document.getElementById('mapWrap');
+  const antes = wrap && wrap.classList.contains('nav');
+  if (wrap) wrap.classList.toggle('nav', !!ind);
+  if (wrap && antes !== !!ind && geoMap) setTimeout(() => geoMap.invalidateSize({ animate: false }), 50);
+  if (!ind) { b.style.display = 'none'; if (hint) hint.style.display = ''; navRotar(null); return; }
   const t = navT();
   b.style.display = 'flex'; if (hint) hint.style.display = 'none';
   const ico = { izq: '↰', der: '↱', llegada: '🏁', fuera: '↩', recto: '↑' }[ind.tipo] || '↑';
@@ -144,6 +169,7 @@ function navActualizarFlecha() {
   if (typeof geoMeMarker === 'undefined' || !geoMeMarker) return;
   const el = geoMeMarker.getElement(); if (!el) return;
   el.classList.add('nav');
+  // la flecha apunta al rumbo real; si el mapa esta girado (rotacion = -rumbo) queda apuntando hacia arriba
   el.style.setProperty('--rumbo', (navRumbo == null ? 0 : navRumbo) + 'deg');
   el.classList.toggle('sin-rumbo', navRumbo == null);
 }
@@ -202,7 +228,7 @@ document.getElementById('navVoz').addEventListener('click', navToggleVoz);
 document.getElementById('navRec').addEventListener('click', navGrabarDescargar);
 navPintarBotones();
 (function navEngancharMapa() { // al arrastrar el mapa a mano se deja de seguir un rato
-  const esperar = () => { if (geoMap) { geoMap.on('dragstart', () => { navFollowPausaHasta = Date.now() + NAV_FOLLOW_PAUSA_MS; }); return; } setTimeout(esperar, 500); };
+  const esperar = () => { if (geoMap) { geoMap.on('dragstart', () => { navFollowPausaHasta = Date.now() + NAV_FOLLOW_PAUSA_MS; navRotar(null); }); return; } setTimeout(esperar, 500); };
   esperar();
 })();
 if (NAV_GRABAR) setTimeout(navGrabarArrancar, 300);

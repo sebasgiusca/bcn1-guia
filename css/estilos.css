@@ -382,7 +382,14 @@
 #btnAssist.sent { background: var(--ok); }
 #btnAssist .lbl { display: none; }
 #geoOverlay { position: fixed; inset: 0; z-index: 9400; background: rgba(15,17,17,.85); display: flex; align-items: center; justify-content: center; padding: 16px; }
-#geoChip { position: absolute; left: 8px; bottom: 8px; z-index: 900; background: rgba(15,17,17,.85); color: #fff; font-size: 11px; font-weight: 600; padding: 5px 9px; border-radius: 999px; pointer-events: none; max-width: 85%; }
+#geoChip { position: absolute; left: 8px; top: 34px; z-index: 900; background: rgba(15,17,17,.85); color: #fff; font-size: 11px; font-weight: 600; padding: 5px 9px; border-radius: 999px; pointer-events: none; max-width: 85%; }
+.map-wrap.nav #geoChip { top: 74px; }
+/* Modo navegacion: mapa mas alto; #map mas grande que la ventana y girado para llevar el rumbo arriba */
+.map-wrap.nav { height: 70vh; max-height: 640px; }
+#map.rot { inset: -30%; width: 160%; height: 160%; transform: rotate(var(--mapRot, 0deg)); transform-origin: 50% 50%; transition: transform .5s linear; }
+#map.rot .lbl-in, #map.rot .geo-dot { display: inline-block; transform: rotate(calc(-1 * var(--mapRot, 0deg))); transition: transform .5s linear; }
+#map.rot .geo-dot.nav::after { transform: translate(-50%, -50%) rotate(calc(var(--rumbo, 0deg) + var(--mapRot, 0deg))) translateY(-19px); }
+#map.rot .leaflet-control-zoom, #map.rot .leaflet-control-attribution { display: none; }
 #geoChip.out { background: rgba(217,72,15,.9); }
 .geo-dot { width: 18px; height: 18px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff; box-shadow: 0 0 0 2px #1a73e8, 0 0 12px rgba(26,115,232,.8); }
 /* Navegacion: flecha de rumbo sobre el punto azul, pancarta de indicaciones y botones seguir/voz */

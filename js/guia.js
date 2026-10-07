@@ -169,7 +169,7 @@ function faseDesdeEstado(data) {
 
 /* Subpasos dentro de una fase real (el conductor avanza con "Siguiente"); se guardan por VRID.
    Fase 1: 0 ir al muelle, 1 dejar llaves, 2 ir a la sala.  Fase 3: 0 recoger llaves, 1 volver al camion, 2 salida. */
-/* Virtuales (PS): 0 ir a la plaza, 1 remolque suelto: elegir, 2 salir del recinto, 3 esperar con la tractora. Precheck (PC): 1 pantalla de espera. */
+/* Virtuales (PS): 0 ir a la plaza y soltar, 1 seguir con la tractora a su destino (doorTruck, p.ej. precheck) o, si no tiene, salir del recinto. Precheck (PC): 1 pantalla de espera. */
 function tipoDestino(door) { const d = geoResolver(door); return d ? d.tipo : null; }
 /* Muelle 'rapido' (DD300): se descarga al momento, sin llaves ni sala: 0 acular y esperar en cabina, 1 salida. */
 function esRapido(door) { const d = geoResolver(door); return !!(d && d.rapido); }
@@ -178,7 +178,7 @@ function subN(fase, door) {
   if (fase >= 1 && t === 'pc') return 1;
   if (fase >= 1 && window.__legPrev) return 2; // segunda referencia (tractora): 0 recoger remolque, 1 salida
   if (fase >= 1 && esRapido(door)) return 2;
-  if (fase >= 1 && t === 'ps') return 4;
+  if (fase >= 1 && t === 'ps') return 2;
   return fase === 1 || fase === 3 ? 3 : 1;
 }
 function subPasoActual(vrId, fase, door) {
@@ -193,7 +193,6 @@ function irSubPaso(target) {
   const fase = faseDesdeEstado(data), door = data && data.door ? String(data.door) : '';
   const cur = subPasoActual(camion.vrId, fase, door);
   let nx = typeof target === 'number' ? target : cur + (target === 'back' ? -1 : 1);
-  if (target === 'back' && tipoDestino(door) === 'ps' && cur >= 2) nx = 1;
   nx = Math.min(Math.max(nx, 0), subN(fase, door) - 1);
   localStorage.setItem('bcn1_sub_' + camion.vrId, fase + ':' + door + ':' + nx);
   renderGenerico(data);
@@ -280,6 +279,11 @@ function renderGenerico(data) {
   const nSub = subN(fase, door);
   const tipo = tipoDestino(door);
   const S = UI[currentLang].sub;
+  // Remolque y tractora sin referencia con destinos distintos (p.ej. remolque a un virtual y la tractora al precheck):
+  // door = destino del remolque (se gestiona primero), doorTruck = destino de la tractora (segundo tramo tras soltar).
+  const doorTruck = data && data.doorTruck ? String(data.doorTruck).toUpperCase() : null;
+  const tractoraLeg = tipo === 'ps' && !next && doorTruck && doorTruck !== door && geoResolver(doorTruck) ? doorTruck : null;
+  const enTramoTractora = tipo === 'ps' && sub === 1 && !!tractoraLeg;
   let btnNext = null, extraBtns = '', clsNext = 'sub-next';
   if (fase === 0 && prev) {
     // Ya ha soltado el remolque y la tractora aun no tiene destino: pantalla de espera (cambia sola al llegar el destino)
@@ -307,15 +311,15 @@ function renderGenerico(data) {
     html += '</ol>';
     btnNext = S.psSuelto;
     if (next) clsNext = 'sub-saltar'; // con segunda referencia, al soltar se pasa directamente a la guia de la tractora
-  } else if (tipo === 'ps' && sub === 1) {
-    html += `<h3>${S.psT}</h3>`;
-    extraBtns = `<button type="button" data-to="2">${S.psSalir}</button><button type="button" data-to="3">${S.psParking}</button>`;
-  } else if (tipo === 'ps' && sub === 2) {
+  } else if (enTramoTractora) {
+    const dT = geoResolver(tractoraLeg);
+    html += `<h3>${S.sigEsperaT}</h3><p>${S.psTractora.replace('{d}', tractoraLeg)}</p><div class="door-big">${tractoraLeg}</div>`;
+    if (dT.tipo === 'pc') html += `<p>${S.pcEspera}</p>`;
+    else html += `<p>${T.transito(tractoraLeg, dT.tipo === 'ps' ? 'virtual' : 'muelle').desc}</p>`;
+  } else if (tipo === 'ps') {
     const puerta = geoRutaSalida(geoResolver(door), !!window.__salidaV2).puerta;
     html += `<h3>${T.salida().titulo} ${puerta}</h3><p>${T.salida().desc}</p><div class="sdt-line">🚪 <b>${T.salida().corto}: ${puerta}</b></div>`;
     extraBtns = `<button type="button" class="sub-fin">${UI[currentLang].btnSalido}</button>`;
-  } else if (tipo === 'ps') {
-    html += `<h3>${S.parkingT}</h3><p>${S.psParking.replace(' ▶', '')}</p>`;
   } else if (rapido && sub === 0) {
     html += `<h3>${S.ddTitulo}</h3><div class="door-big">${door}</div><p>${S.ddDesc.replace('{d}', door)}</p><ol>`;
     S.ddPasos.forEach(p => html += `<li>${p}</li>`);
@@ -361,9 +365,10 @@ function renderGenerico(data) {
   }
   stepsDiv.innerHTML = html;
   mapWrap.classList.add('show');
-  geoMostrar(fase, door, !!window.__salidaV2, prev && fase >= 1 ? (sub === 0 ? 0 : 2) : sub);
+  if (enTramoTractora) geoMostrar(fase, tractoraLeg, !!window.__salidaV2, 0, door);
+  else geoMostrar(fase, door, !!window.__salidaV2, prev && fase >= 1 ? (sub === 0 ? 0 : 2) : sub);
   if (fase >= 1 && door) geoPedirConsentimiento(camion);
-  renderFeedback((fase === 3 && sub === nSub - 1) || (tipo === 'ps' && sub >= 2) || (rapido && sub === 1) || (!!prev && fase >= 1 && sub === 1));
+  renderFeedback((fase === 3 && sub === nSub - 1) || (tipo === 'ps' && sub === 1 && !tractoraLeg) || (rapido && sub === 1) || (!!prev && fase >= 1 && sub === 1));
   if (fase !== window.__ultimaFasePresencia) { window.__ultimaFasePresencia = fase; enviarPresencia(); }
 }
 
