@@ -21,7 +21,13 @@
   @keyframes flash{50%{background:#ff9900;color:#000}}
   .lbl{font-size:18px;color:#9fb3d9}
   .num{white-space:nowrap;font-size:84px;font-weight:bold;line-height:1.1;margin:6px 0;letter-spacing:2px}
+  .matr{font-size:34px;font-weight:bold;letter-spacing:4px;color:#ffd166;margin:0 0 8px}
   .cuando{font-size:18px;color:#9fb3d9;margin-bottom:10px}
+  .card.alerta{animation:alerta .7s steps(1) infinite;border-color:#fff;border-width:6px;box-shadow:0 0 28px 6px #ff1744}
+  @keyframes alerta{0%{background:#e60023;color:#fff}50%{background:#ffe600;color:#000}}
+  .card.alerta .lbl,.card.alerta .cuando,.card.alerta .matr{color:inherit}
+  body.hayAlerta header{animation:cab .7s steps(1) infinite}
+  @keyframes cab{0%{background:#e60023}50%{background:#111a2e}}
   .card.viejo{border-color:#e74c3c}.card.viejo .cuando{color:#ff8a80}
   button.quitar{width:100%;font-size:20px;padding:12px;border:0;border-radius:10px;background:#2ecc71;color:#06280f;font-weight:bold;cursor:pointer}
   #vacio{text-align:center;color:#6c7fa8;font-size:34px;margin-top:12vh}
@@ -44,7 +50,7 @@
   body.tv #mapa{display:none}
   body.tv #anunciar{display:none}
   body.tv{cursor:none}
-  body.tv #grid{grid-template-columns:repeat(auto-fill,minmax(520px,1fr))}body.tv .num{font-size:130px}body.tv .lbl,body.tv .cuando{font-size:26px}
+  body.tv #grid{grid-template-columns:repeat(auto-fill,minmax(520px,1fr))}body.tv .num{font-size:130px}body.tv .lbl,body.tv .cuando{font-size:26px}body.tv .matr{font-size:56px}
   body.tv button.quitar,body.tv #toast{display:none!important}
   body.tv h1{font-size:40px}
 </style>
@@ -69,7 +75,7 @@
 <script>
 (function () {
   var DB = 'https://tom-yard-default-rtdb.europe-west1.firebasedatabase.app';
-  var POLL_MS = 5000, MAX_AGE = 2 * 3600 * 1000, VIEJO_MIN = 15;
+  var POLL_MS = 5000, MAX_AGE = 2 * 3600 * 1000, VIEJO_MIN = 15, ALERTA_MIN = 3, ultimoHtml = '';
   var tv = /[?&]tv=1/.test(location.search);
   if (tv) document.body.classList.add('tv');
   document.getElementById('modo').textContent = tv ? 'pantalla' : 'clerk';
@@ -103,7 +109,7 @@
       if (!b || !b.door || !b.ts) return;
       if (now - b.ts > MAX_AGE) return;
       if (b.done && b.done >= b.ts) return;
-      lista.push({ vr: vr, door: b.door, ts: b.ts });
+      lista.push({ vr: vr, door: b.door, ts: b.ts, plate: b.plate || '' });
     });
     lista.sort(function (a, b) { return a.ts - b.ts; });
     var html = '', nuevos = 0;
@@ -112,13 +118,15 @@
       var clave = it.vr + '|' + it.ts, nuevo = !primera && !visto[clave];
       if (nuevo) nuevos++;
       visto[clave] = 1;
-      html += '<div class="card' + (nuevo ? ' nuevo' : '') + (min >= VIEJO_MIN ? ' viejo' : '') + '">' +
+      html += '<div class="card' + (nuevo ? ' nuevo' : '') + (min >= VIEJO_MIN ? ' viejo' : '') + (now - it.ts >= ALERTA_MIN * 60000 ? ' alerta' : '') + '">' +
         '<div class="lbl">Muelle</div><div class="num">' + esc(it.door) + '</div>' +
+        (it.plate ? '<div class="matr">' + esc(it.plate) + '</div>' : '') +
         '<div class="cuando">Llamado ' + hora(it.ts) + ' · hace ' + min + ' min</div>' +
         '<button class="quitar" data-vr="' + esc(it.vr) + '" data-ts="' + it.ts + '">Quitar (ya está)</button></div>';
     });
     primera = false;
-    grid.innerHTML = html;
+    try { var hay = html.indexOf('alerta') > -1; document.body.classList[hay ? 'add' : 'remove']('hayAlerta'); } catch (e) {}
+    if (html !== ultimoHtml) { grid.innerHTML = html; ultimoHtml = html; }
     vacio.style.display = lista.length ? 'none' : 'block';
   }
 
