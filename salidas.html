@@ -17,17 +17,17 @@
   main{padding:22px}
   #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
   .card{background:#16223c;border:3px solid #2b3d66;border-radius:16px;padding:18px 20px;text-align:center}
-  .card.nuevo{animation:flash 1.2s 4;border-color:#ff9900}
-  @keyframes flash{50%{background:#ff9900;color:#000}}
+  .card.nuevo{animation:flash 3s ease-in-out 2;border-color:#ff9900}
+  @keyframes flash{50%{background:#5c3d10}}
   .lbl{font-size:18px;color:#9fb3d9}
   .num{white-space:nowrap;font-size:84px;font-weight:bold;line-height:1.1;margin:6px 0;letter-spacing:2px}
   .matr{font-size:34px;font-weight:bold;letter-spacing:4px;color:#ffd166;margin:0 0 8px}
   .cuando{font-size:18px;color:#9fb3d9;margin-bottom:10px}
-  .card.alerta{animation:alerta .7s steps(1) infinite;border-color:#fff;border-width:6px;box-shadow:0 0 28px 6px #ff1744}
-  @keyframes alerta{0%{background:#e60023;color:#fff}50%{background:#ffe600;color:#000}}
+  .card.alerta{animation:alerta 5s ease-in-out infinite;border-color:#ff8a80;border-width:5px;background:#8a1020;color:#fff}
+  @keyframes alerta{0%,100%{background:#7d1220}50%{background:#a8182c}}
   .card.alerta .lbl,.card.alerta .cuando,.card.alerta .matr{color:inherit}
-  body.hayAlerta header{animation:cab .7s steps(1) infinite}
-  @keyframes cab{0%{background:#e60023}50%{background:#111a2e}}
+  body.hayAlerta header{background:#7d1220}
+  
   .card.viejo{border-color:#e74c3c}.card.viejo .cuando{color:#ff8a80}
   button.quitar{width:100%;font-size:20px;padding:12px;border:0;border-radius:10px;background:#2ecc71;color:#06280f;font-weight:bold;cursor:pointer}
   #vacio{text-align:center;color:#6c7fa8;font-size:34px;margin-top:12vh}
