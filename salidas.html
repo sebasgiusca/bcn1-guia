@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salidas BCN1</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0b1220;color:#fff;font-family:Arial,Helvetica,sans-serif}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:#111a2e;border-bottom:3px solid #ff9900}
+  h1{margin:0;font-size:28px;letter-spacing:1px}
+  h1 small{color:#ff9900;font-size:16px;margin-left:10px;font-weight:normal}
+  #estado{font-size:16px;display:flex;align-items:center;gap:8px}
+  #punto{width:14px;height:14px;border-radius:50%;background:#7f8c8d;display:inline-block}
+  #punto.ok{background:#2ecc71}#punto.mal{background:#e74c3c;animation:par 1s infinite}
+  @keyframes par{50%{opacity:.25}}
+  main{padding:22px}
+  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+  .card{background:#16223c;border:3px solid #2b3d66;border-radius:16px;padding:18px 20px;text-align:center}
+  .card.nuevo{animation:flash 1.2s 4;border-color:#ff9900}
+  @keyframes flash{50%{background:#ff9900;color:#000}}
+  .lbl{font-size:18px;color:#9fb3d9}
+  .num{font-size:84px;font-weight:bold;line-height:1.1;margin:6px 0;letter-spacing:2px}
+  .cuando{font-size:18px;color:#9fb3d9;margin-bottom:10px}
+  .card.viejo{border-color:#e74c3c}.card.viejo .cuando{color:#ff8a80}
+  button.quitar{width:100%;font-size:20px;padding:12px;border:0;border-radius:10px;background:#2ecc71;color:#06280f;font-weight:bold;cursor:pointer}
+  #vacio{text-align:center;color:#6c7fa8;font-size:34px;margin-top:12vh}
+  #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;display:none;font-size:16px}
+  #toast button{margin-left:12px;padding:4px 10px;border:0;border-radius:6px;background:#ff9900;cursor:pointer;font-weight:bold}
+  body.tv{cursor:none}
+  body.tv .num{font-size:130px}body.tv .lbl,body.tv .cuando{font-size:26px}
+  body.tv button.quitar,body.tv #toast{display:none!important}
+  body.tv h1{font-size:40px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Salidas <b>BCN1</b><small id="modo"></small></h1>
+  <div id="estado"><span id="punto"></span><span id="txt">Conectando...</span></div>
+</header>
+<main>
+  <div id="grid"></div>
+  <div id="vacio" style="display:none">Sin salidas pendientes</div>
+</main>
+<div id="toast"></div>
+<script>
+(function () {
+  var DB = 'https://tom-yard-default-rtdb.europe-west1.firebasedatabase.app';
+  var POLL_MS = 5000, MAX_AGE = 2 * 3600 * 1000, VIEJO_MIN = 15;
+  var tv = /[?&]tv=1/.test(location.search);
+  if (tv) document.body.classList.add('tv');
+  document.getElementById('modo').textContent = tv ? 'pantalla' : 'clerk';
+
+  var okTs = 0, bootTs = Date.now(), visto = {}, primera = true, deshacer = null;
+  var grid = document.getElementById('grid'), vacio = document.getElementById('vacio');
+  var punto = document.getElementById('punto'), txt = document.getElementById('txt');
+
+  function http(method, url, body, cb) {
+    try {
+      var x = new XMLHttpRequest();
+      x.open(method, url, true);
+      x.timeout = 8000;
+      x.onreadystatechange = function () {
+        if (x.readyState !== 4) return;
+        var ok = x.status >= 200 && x.status < 300, data = null;
+        try { data = ok && x.responseText ? JSON.parse(x.responseText) : null; } catch (e) { ok = false; }
+        cb(ok, data);
+      };
+      x.send(body == null ? null : JSON.stringify(body));
+    } catch (e) { cb(false, null); }
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function hora(ts) { var d = new Date(ts); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+
+  function pintar(board) {
+    var now = Date.now(), lista = [];
+    Object.keys(board || {}).forEach(function (vr) {
+      var b = board[vr];
+      if (!b || !b.door || !b.ts) return;
+      if (now - b.ts > MAX_AGE) return;
+      if (b.done && b.done >= b.ts) return;
+      lista.push({ vr: vr, door: b.door, ts: b.ts });
+    });
+    lista.sort(function (a, b) { return a.ts - b.ts; });
+    var html = '', nuevos = 0;
+    lista.forEach(function (it) {
+      var min = Math.max(0, Math.round((now - it.ts) / 60000));
+      var clave = it.vr + '|' + it.ts, nuevo = !primera && !visto[clave];
+      if (nuevo) nuevos++;
+      visto[clave] = 1;
+      html += '<div class="card' + (nuevo ? ' nuevo' : '') + (min >= VIEJO_MIN ? ' viejo' : '') + '">' +
+        '<div class="lbl">Muelle</div><div class="num">' + esc(it.door) + '</div>' +
+        '<div class="cuando">Llamado ' + hora(it.ts) + ' · hace ' + min + ' min</div>' +
+        '<button class="quitar" data-vr="' + esc(it.vr) + '" data-ts="' + it.ts + '">Quitar (ya está)</button></div>';
+    });
+    primera = false;
+    grid.innerHTML = html;
+    vacio.style.display = lista.length ? 'none' : 'block';
+  }
+
+  function quitar(vr, ts) {
+    var antes = board_ultimo && board_ultimo[vr] && board_ultimo[vr].done || null;
+    http('PUT', DB + '/board/' + encodeURIComponent(vr) + '/done.json', Date.now(), function (ok) {
+      if (!ok) { aviso('No se pudo quitar. Reintenta.'); return; }
+      if (board_ultimo && board_ultimo[vr]) board_ultimo[vr].done = Date.now();
+      pintar(board_ultimo);
+      deshacer = { vr: vr, antes: antes };
+      aviso('Quitado ' + (board_ultimo[vr] ? board_ultimo[vr].door : ''), true);
+    });
+  }
+  var board_ultimo = null, toastT = null;
+  function aviso(t, conDeshacer) {
+    var el = document.getElementById('toast');
+    el.innerHTML = esc(t) + (conDeshacer ? '<button id="undo">Deshacer</button>' : '');
+    el.style.display = 'block';
+    clearTimeout(toastT);
+    toastT = setTimeout(function () { el.style.display = 'none'; }, 8000);
+    var u = document.getElementById('undo');
+    if (u) u.onclick = function () {
+      if (!deshacer) return;
+      var d = deshacer; deshacer = null;
+      var url = DB + '/board/' + encodeURIComponent(d.vr) + '/done.json';
+      http(d.antes == null ? 'DELETE' : 'PUT', url, d.antes == null ? null : d.antes, function () { el.style.display = 'none'; leer(); });
+    };
+  }
+  grid.addEventListener('click', function (e) {
+    var b = e.target; if (!b.getAttribute || !b.getAttribute('data-vr')) return;
+    quitar(b.getAttribute('data-vr'), b.getAttribute('data-ts'));
+  });
+
+  function leer() {
+    http('GET', DB + '/board.json', null, function (ok, data) {
+      if (ok) { okTs = Date.now(); board_ultimo = data || {}; pintar(board_ultimo); }
+      estado();
+    });
+  }
+  function estado() {
+    var seg = okTs ? Math.round((Date.now() - okTs) / 1000) : null;
+    if (seg !== null && seg <= 20) { punto.className = 'ok'; txt.textContent = 'Conectado · actualizado hace ' + seg + ' s'; }
+    else { punto.className = 'mal'; txt.textContent = okTs ? 'SIN CONEXIÓN desde hace ' + seg + ' s' : 'Sin conexión con Firebase'; }
+    if (okTs && Date.now() - okTs > 60000 && tv) location.reload();
+    if (Date.now() - bootTs > 12 * 3600 * 1000) location.reload();
+  }
+  setInterval(leer, POLL_MS);
+  setInterval(function () { if (board_ultimo) pintar(board_ultimo); estado(); }, 1000);
+  leer();
+})();
+</script>
+</body>
+</html>
