@@ -36,6 +36,7 @@
   #mapa h3{margin:14px 0 6px;font-size:14px;color:#9fb3d9;letter-spacing:1px;text-transform:uppercase}
   .tiles{display:flex;flex-wrap:wrap;gap:6px}
   .tile{min-width:68px;padding:12px 6px;font-size:16px;font-weight:bold;border:2px solid #2b3d66;border-radius:8px;background:#16223c;color:#fff;cursor:pointer}
+  .tile.ps{border-color:#b58a3d}
   .tile.ib{border-color:#3d6fb5}.tile.ob{border-color:#4a8a5c}
   .tile.sel{background:#ff9900;color:#000;border-color:#ff9900;transform:scale(1.08)}
   .tile.on{background:#7a1f1f;border-color:#e74c3c;color:#ffb3ad;cursor:default}
@@ -58,6 +59,7 @@
   <details id="mapa" open><summary>Llamar desde el mapa</summary>
     <h3>Inbound (descargas)</h3><div class="tiles" id="tIB"></div>
     <h3>Outbound (cargas)</h3><div class="tiles" id="tOB"></div>
+    <h3>Plazas de tractora (PS)</h3><div class="tiles" id="tPS"></div>
     <div id="confirma">Pulsa un muelle y vuelve a pulsarlo para llamar. Plazas PS/PC: escribelas arriba.</div>
   </details>
   <div id="grid"></div>
@@ -179,6 +181,7 @@
     }
     tiles('tIB', 'IB', 107, 122, 'ib');
     tiles('tOB', 'OB', 123, 173, 'ob');
+    tiles('tPS', 'PS', 558, 563, 'ps');
     document.getElementById('mapa').addEventListener('click', function (e) {
       var b = e.target, d = b.getAttribute && b.getAttribute('data-d'); if (!d) return;
       var c = document.getElementById('confirma');
@@ -193,26 +196,37 @@
     var t = document.querySelectorAll('.tile');
     for (var i = 0; i < t.length; i++) {
       var d = t[i].getAttribute('data-d'), on = enPantalla(d);
-      t[i].className = 'tile ' + (d.slice(0, 2) === 'IB' ? 'ib' : 'ob') + (on ? ' on' : (d === seleccion ? ' sel' : ''));
+      t[i].className = 'tile ' + (d.slice(0, 2) === 'IB' ? 'ib' : d.slice(0, 2) === 'PS' ? 'ps' : 'ob') + (on ? ' on' : (d === seleccion ? ' sel' : ''));
     }
   }
   montarMapa();
   document.getElementById('btnAnunciar').addEventListener('click', anunciar);
   document.getElementById('muelle').addEventListener('keydown', function (e) { if (e.key === 'Enter') anunciar(); });
 
-  function leer() {
-    http('GET', DB + '/board.json', null, function (ok, data) {
+  var leyendo = 0;
+  function leer(reintento) {
+    if (leyendo && Date.now() - leyendo < 12000) return;
+    leyendo = Date.now();
+    http('GET', DB + '/board.json?t=' + Date.now(), null, function (ok, data) {
+      leyendo = 0;
       if (ok) { okTs = Date.now(); board_ultimo = data || {}; pintar(board_ultimo); marcar(); }
+      else if (!reintento) setTimeout(function () { leer(true); }, 1500);
       estado();
     });
   }
   function estado() {
     var seg = okTs ? Math.round((Date.now() - okTs) / 1000) : null;
-    if (seg !== null && seg <= 20) { punto.className = 'ok'; txt.textContent = 'Conectado · actualizado hace ' + seg + ' s'; }
+    if (seg !== null && seg <= 30) { punto.className = 'ok'; txt.textContent = 'Conectado · actualizado hace ' + seg + ' s'; }
     else { punto.className = 'mal'; txt.textContent = okTs ? 'SIN CONEXIÓN desde hace ' + seg + ' s' : 'Sin conexión con Firebase'; }
-    if (okTs && Date.now() - okTs > 60000 && tv) location.reload();
+    var escribiendo = !tv && document.getElementById('muelle').value;
+    var sinDatos = okTs ? Date.now() - okTs : Date.now() - bootTs;
+    if (sinDatos > (tv ? 90000 : 240000) && !escribiendo && !seleccion) location.reload();
     if (Date.now() - bootTs > 12 * 3600 * 1000) location.reload();
   }
+  try {
+    window.addEventListener('online', function () { leer(); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) leer(); });
+  } catch (e) {}
   setInterval(leer, POLL_MS);
   setInterval(function () { if (board_ultimo) pintar(board_ultimo); estado(); }, 1000);
   leer();
