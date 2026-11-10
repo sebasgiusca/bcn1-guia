@@ -15,20 +15,35 @@
   #punto.ok{background:#2ecc71}#punto.mal{background:#e74c3c;animation:par 1s infinite}
   @keyframes par{50%{opacity:.25}}
   main{padding:22px}
-  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
   .card{background:#16223c;border:3px solid #2b3d66;border-radius:16px;padding:18px 20px;text-align:center}
   .card.nuevo{animation:flash 1.2s 4;border-color:#ff9900}
   @keyframes flash{50%{background:#ff9900;color:#000}}
   .lbl{font-size:18px;color:#9fb3d9}
-  .num{font-size:84px;font-weight:bold;line-height:1.1;margin:6px 0;letter-spacing:2px}
+  .num{white-space:nowrap;font-size:84px;font-weight:bold;line-height:1.1;margin:6px 0;letter-spacing:2px}
   .cuando{font-size:18px;color:#9fb3d9;margin-bottom:10px}
   .card.viejo{border-color:#e74c3c}.card.viejo .cuando{color:#ff8a80}
   button.quitar{width:100%;font-size:20px;padding:12px;border:0;border-radius:10px;background:#2ecc71;color:#06280f;font-weight:bold;cursor:pointer}
   #vacio{text-align:center;color:#6c7fa8;font-size:34px;margin-top:12vh}
   #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;display:none;font-size:16px}
   #toast button{margin-left:12px;padding:4px 10px;border:0;border-radius:6px;background:#ff9900;cursor:pointer;font-weight:bold}
+  #anunciar{display:flex;gap:10px;margin:0 0 20px}
+  #anunciar input{flex:1;max-width:340px;font-size:26px;padding:10px 14px;border-radius:10px;border:2px solid #2b3d66;background:#16223c;color:#fff;text-transform:uppercase}
+  #anunciar button{font-size:22px;padding:10px 22px;border:0;border-radius:10px;background:#ff9900;color:#000;font-weight:bold;cursor:pointer}
+  #anunciar small{align-self:center;color:#6c7fa8}
+  #mapa{margin:0 0 22px;background:#111a2e;border:2px solid #2b3d66;border-radius:14px;padding:12px 16px}
+  #mapa summary{cursor:pointer;font-size:20px;font-weight:bold;color:#ff9900;outline:none}
+  #mapa h3{margin:14px 0 6px;font-size:14px;color:#9fb3d9;letter-spacing:1px;text-transform:uppercase}
+  .tiles{display:flex;flex-wrap:wrap;gap:6px}
+  .tile{min-width:68px;padding:12px 6px;font-size:16px;font-weight:bold;border:2px solid #2b3d66;border-radius:8px;background:#16223c;color:#fff;cursor:pointer}
+  .tile.ib{border-color:#3d6fb5}.tile.ob{border-color:#4a8a5c}
+  .tile.sel{background:#ff9900;color:#000;border-color:#ff9900;transform:scale(1.08)}
+  .tile.on{background:#7a1f1f;border-color:#e74c3c;color:#ffb3ad;cursor:default}
+  #confirma{margin-top:12px;font-size:18px;color:#ff9900;min-height:24px}
+  body.tv #mapa{display:none}
+  body.tv #anunciar{display:none}
   body.tv{cursor:none}
-  body.tv .num{font-size:130px}body.tv .lbl,body.tv .cuando{font-size:26px}
+  body.tv #grid{grid-template-columns:repeat(auto-fill,minmax(520px,1fr))}body.tv .num{font-size:130px}body.tv .lbl,body.tv .cuando{font-size:26px}
   body.tv button.quitar,body.tv #toast{display:none!important}
   body.tv h1{font-size:40px}
 </style>
@@ -39,6 +54,12 @@
   <div id="estado"><span id="punto"></span><span id="txt">Conectando...</span></div>
 </header>
 <main>
+  <div id="anunciar"><input id="muelle" placeholder="Muelle o plaza (172, IB110, PS559)" maxlength="10" autocomplete="off"><button id="btnAnunciar">ANUNCIAR</button><small id="anHint"></small></div>
+  <details id="mapa" open><summary>Llamar desde el mapa</summary>
+    <h3>Inbound (descargas)</h3><div class="tiles" id="tIB"></div>
+    <h3>Outbound (cargas)</h3><div class="tiles" id="tOB"></div>
+    <div id="confirma">Pulsa un muelle y vuelve a pulsarlo para llamar. Plazas PS/PC: escribelas arriba.</div>
+  </details>
   <div id="grid"></div>
   <div id="vacio" style="display:none">Sin salidas pendientes</div>
 </main>
@@ -104,7 +125,7 @@
     http('PUT', DB + '/board/' + encodeURIComponent(vr) + '/done.json', Date.now(), function (ok) {
       if (!ok) { aviso('No se pudo quitar. Reintenta.'); return; }
       if (board_ultimo && board_ultimo[vr]) board_ultimo[vr].done = Date.now();
-      pintar(board_ultimo);
+      pintar(board_ultimo); marcar();
       deshacer = { vr: vr, antes: antes };
       aviso('Quitado ' + (board_ultimo[vr] ? board_ultimo[vr].door : ''), true);
     });
@@ -129,9 +150,59 @@
     quitar(b.getAttribute('data-vr'), b.getAttribute('data-ts'));
   });
 
+  function enPantalla(v) {
+    var ya = false;
+    Object.keys(board_ultimo || {}).forEach(function (k) { var b = board_ultimo[k]; if (b && b.door === v && !(b.done && b.done >= b.ts) && Date.now() - b.ts < MAX_AGE) ya = true; });
+    return ya;
+  }
+  function enviar(v, hint, despues) {
+    if (enPantalla(v)) { hint.textContent = v + ' ya esta en pantalla'; return; }
+    var now = Date.now(), id = 'M' + now + Math.random().toString(36).slice(2, 6);
+    http('PUT', DB + '/board/' + id + '.json', { door: v, ts: now }, function (ok) {
+      if (!ok) { hint.textContent = 'No se pudo enviar. Reintenta.'; return; }
+      hint.textContent = 'Enviado: ' + v; if (despues) despues(); leer();
+    });
+  }
+  function anunciar() {
+    var inp = document.getElementById('muelle'), hint = document.getElementById('anHint');
+    var v = String(inp.value || '').toUpperCase().replace(/\s+/g, '');
+    if (/^\d{1,4}$/.test(v)) v = 'OB' + v;
+    if (!/^[A-Z]{2}\d{1,4}$/.test(v)) { hint.textContent = 'Escribe muelle o plaza valido (172, IB110, PS559)'; return; }
+    enviar(v, hint, function () { inp.value = ''; });
+  }
+  var seleccion = null;
+  function montarMapa() {
+    function tiles(id, pref, desde, hasta, cls) {
+      var h = '';
+      for (var n = desde; n <= hasta; n++) h += '<button class="tile ' + cls + '" data-d="' + pref + n + '">' + pref + n + '</button>';
+      document.getElementById(id).innerHTML = h;
+    }
+    tiles('tIB', 'IB', 107, 122, 'ib');
+    tiles('tOB', 'OB', 123, 173, 'ob');
+    document.getElementById('mapa').addEventListener('click', function (e) {
+      var b = e.target, d = b.getAttribute && b.getAttribute('data-d'); if (!d) return;
+      var c = document.getElementById('confirma');
+      if (enPantalla(d)) { c.textContent = d + ' ya esta en pantalla'; return; }
+      if (seleccion === d) {
+        seleccion = null; c.textContent = 'Enviando ' + d + '...';
+        enviar(d, c, function () { marcar(); });
+      } else { seleccion = d; c.textContent = 'Pulsa otra vez ' + d + ' para llamar'; marcar(); }
+    });
+  }
+  function marcar() {
+    var t = document.querySelectorAll('.tile');
+    for (var i = 0; i < t.length; i++) {
+      var d = t[i].getAttribute('data-d'), on = enPantalla(d);
+      t[i].className = 'tile ' + (d.slice(0, 2) === 'IB' ? 'ib' : 'ob') + (on ? ' on' : (d === seleccion ? ' sel' : ''));
+    }
+  }
+  montarMapa();
+  document.getElementById('btnAnunciar').addEventListener('click', anunciar);
+  document.getElementById('muelle').addEventListener('keydown', function (e) { if (e.key === 'Enter') anunciar(); });
+
   function leer() {
     http('GET', DB + '/board.json', null, function (ok, data) {
-      if (ok) { okTs = Date.now(); board_ultimo = data || {}; pintar(board_ultimo); }
+      if (ok) { okTs = Date.now(); board_ultimo = data || {}; pintar(board_ultimo); marcar(); }
       estado();
     });
   }
