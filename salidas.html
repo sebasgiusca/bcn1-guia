@@ -23,10 +23,10 @@
   .num{white-space:nowrap;font-size:84px;font-weight:bold;line-height:1.1;margin:6px 0;letter-spacing:2px}
   .matr{font-size:34px;font-weight:bold;letter-spacing:4px;color:#ffd166;margin:0 0 8px}
   .cuando{font-size:18px;color:#9fb3d9;margin-bottom:10px}
-  .card.alerta{animation:alerta 5s ease-in-out infinite;border-color:#ff8a80;border-width:5px;background:#8a1020;color:#fff}
-  @keyframes alerta{0%,100%{background:#7d1220}50%{background:#a8182c}}
+  .card.alerta{animation:alerta 1.6s ease-in-out infinite;border-color:#ffb3ab;border-width:6px;background:#b0001f;color:#fff}
+  @keyframes alerta{0%,100%{background:#b0001f;box-shadow:0 0 22px 4px rgba(255,60,60,.65)}50%{background:#4a0812;box-shadow:0 0 0 0 rgba(255,60,60,0)}}
   .card.alerta .lbl,.card.alerta .cuando,.card.alerta .matr{color:inherit}
-  body.hayAlerta header{background:#7d1220}
+  body.hayAlerta header{background:#9a1226}
   
   .card.viejo{border-color:#e74c3c}.card.viejo .cuando{color:#ff8a80}
   button.quitar{width:100%;font-size:20px;padding:12px;border:0;border-radius:10px;background:#2ecc71;color:#06280f;font-weight:bold;cursor:pointer}
@@ -122,7 +122,7 @@
         '<div class="lbl">Muelle</div><div class="num">' + esc(it.door) + '</div>' +
         (it.plate ? '<div class="matr">' + esc(it.plate) + '</div>' : '') +
         '<div class="cuando">Llamado ' + hora(it.ts) + ' · hace ' + min + ' min</div>' +
-        '<button class="quitar" data-vr="' + esc(it.vr) + '" data-ts="' + it.ts + '">Quitar (ya está)</button></div>';
+        '<button class="quitar" data-vr="' + esc(it.vr) + '" data-ts="' + it.ts + '">Ya está</button></div>';
     });
     primera = false;
     try { var hay = html.indexOf('alerta') > -1; document.body.classList[hay ? 'add' : 'remove']('hayAlerta'); } catch (e) {}
@@ -133,7 +133,7 @@
   function quitar(vr, ts) {
     var antes = board_ultimo && board_ultimo[vr] && board_ultimo[vr].done || null;
     http('PUT', DB + '/board/' + encodeURIComponent(vr) + '/done.json', Date.now(), function (ok) {
-      if (!ok) { aviso('No se pudo quitar. Reintenta.'); return; }
+      if (!ok) { aviso('No se pudo marcar. Reintenta.'); return; }
       if (board_ultimo && board_ultimo[vr]) board_ultimo[vr].done = Date.now();
       pintar(board_ultimo); marcar();
       deshacer = { vr: vr, antes: antes };
