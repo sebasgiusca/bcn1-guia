@@ -27,6 +27,12 @@
   @keyframes alerta{0%,100%{background:#b0001f;box-shadow:0 0 22px 4px rgba(255,60,60,.65)}50%{background:#4a0812;box-shadow:0 0 0 0 rgba(255,60,60,0)}}
   .card.alerta .lbl,.card.alerta .cuando,.card.alerta .matr{color:inherit}
   body.hayAlerta header{background:#9a1226}
+  #btnSonido{margin-right:14px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font:600 16px/1 inherit;cursor:pointer;opacity:.75}
+  #btnSonido.on{opacity:1;background:#1f7a3a;border-color:#1f7a3a}
+  #btnSonido.pide{animation:pide 1s infinite alternate}
+  #capaSonido{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;font:700 clamp(28px,5vw,64px)/1.2 inherit;cursor:pointer}
+  #capaSonido div{background:#f0ad2c;color:#111;padding:28px 44px;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+  @keyframes pide{from{background:#b7791f}to{background:#f0ad2c}}
   
   .card.viejo{border-color:#e74c3c}.card.viejo .cuando{color:#ff8a80}
   button.quitar{width:100%;font-size:20px;padding:12px;border:0;border-radius:10px;background:#2ecc71;color:#06280f;font-weight:bold;cursor:pointer}
@@ -50,15 +56,24 @@
   body.tv #mapa{display:none}
   body.tv #anunciar{display:none}
   body.tv{cursor:none}
-  body.tv #grid{grid-template-columns:repeat(auto-fill,minmax(520px,1fr))}body.tv .num{font-size:130px}body.tv .lbl,body.tv .cuando{font-size:26px}body.tv .matr{font-size:56px}
+  /* TV: todo cabe en pantalla sin desplazarse; columnas y tamanos segun el numero de avisos (--cols/--rows los pone JS) */
+  body.tv{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  body.tv header{padding:1vh 2vw;flex:0 0 auto}
+  body.tv main{flex:1 1 auto;min-height:0;padding:1.5vh 1.5vw;display:flex;flex-direction:column}
+  body.tv #grid{flex:1 1 auto;min-height:0;grid-template-columns:repeat(var(--cols,1),1fr);grid-auto-rows:1fr;gap:1.5vh 1.5vw}
+  body.tv .card{display:flex;flex-direction:column;justify-content:center;padding:1vh 1vw;min-height:0;overflow:hidden}
+  body.tv .num{font-size:min(calc(80vw / var(--cols,1) / 3.4), calc(42vh / var(--rows,1)));margin:0;letter-spacing:.03em}
+  body.tv .matr{font-size:min(calc(80vw / var(--cols,1) / 7), calc(16vh / var(--rows,1)));margin:0;letter-spacing:.1em}
+  body.tv .lbl,body.tv .cuando{font-size:min(calc(80vw / var(--cols,1) / 14), calc(8vh / var(--rows,1)));margin:0}
+  body.tv #vacio{font-size:6vh}
   body.tv button.quitar,body.tv #toast{display:none!important}
-  body.tv h1{font-size:40px}
+  body.tv h1{font-size:4.5vh}body.tv h1 small{font-size:2vh}body.tv #estado,body.tv #btnSonido{font-size:2vh}
 </style>
 </head>
 <body>
 <header>
   <h1>Salidas <b>BCN1</b><small id="modo"></small></h1>
-  <div id="estado"><span id="punto"></span><span id="txt">Conectando...</span></div>
+  <div id="estado"><button id="btnSonido" type="button" title="Sonido al aparecer un aviso">&#128264; Sonido</button><span id="punto"></span><span id="txt">Conectando...</span></div>
 </header>
 <main>
   <div id="anunciar"><input id="muelle" placeholder="Muelle o plaza (172, IB110, PS559)" maxlength="10" autocomplete="off"><button id="btnAnunciar">ANUNCIAR</button><small id="anHint"></small></div>
@@ -68,6 +83,7 @@
     <h3>Plazas de tractora (PS)</h3><div class="tiles" id="tPS"></div>
     <div id="confirma">Pulsa un muelle y vuelve a pulsarlo para llamar. Plazas PS/PC: escribelas arriba.</div>
   </details>
+  <div id="capaSonido" style="display:none"><div>&#128266;<br>Toca la pantalla para activar el sonido</div></div>
   <div id="grid"></div>
   <div id="vacio" style="display:none">Sin salidas pendientes</div>
 </main>
@@ -106,10 +122,12 @@
     var now = Date.now(), lista = [];
     Object.keys(board || {}).forEach(function (vr) {
       var b = board[vr];
-      if (!b || !b.door || !b.ts) return;
-      if (now - b.ts > MAX_AGE) return;
-      if (b.done && b.done >= b.ts) return;
-      lista.push({ vr: vr, door: b.door, ts: b.ts, plate: b.plate || '' });
+      if (!b || typeof b.door !== 'string' || !b.door) return;
+      var ts = Number(b.ts); // board se escribe sin auth: solo ts numerico (evita NaN e inyeccion en data-ts)
+      if (!isFinite(ts) || ts <= 0) return;
+      if (now - ts > MAX_AGE) return;
+      if (b.done && b.done >= ts) return;
+      lista.push({ vr: vr, door: b.door, ts: ts, plate: typeof b.plate === 'string' ? b.plate : '' });
     });
     lista.sort(function (a, b) { return a.ts - b.ts; });
     var html = '', nuevos = 0;
@@ -122,25 +140,70 @@
         '<div class="lbl">Muelle</div><div class="num">' + esc(it.door) + '</div>' +
         (it.plate ? '<div class="matr">' + esc(it.plate) + '</div>' : '') +
         '<div class="cuando">Llamado ' + hora(it.ts) + ' · hace ' + min + ' min</div>' +
-        '<button class="quitar" data-vr="' + esc(it.vr) + '" data-ts="' + it.ts + '">Ya está</button></div>';
+        '<button class="quitar" data-vr="' + esc(it.vr) + '" data-ts="' + esc(it.ts) + '">Ya está</button></div>';
     });
+    if (nuevos > 0 && !primera) sonar();
     primera = false;
     try { var hay = html.indexOf('alerta') > -1; document.body.classList[hay ? 'add' : 'remove']('hayAlerta'); } catch (e) {}
     if (html !== ultimoHtml) { grid.innerHTML = html; ultimoHtml = html; }
+    if (tv) { // columnas segun avisos: 1 -> 1, 2-4 -> 2, 5-9 -> 3, mas -> 4
+      var n = lista.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4, rows = Math.max(1, Math.ceil(n / cols));
+      grid.style.setProperty('--cols', cols); grid.style.setProperty('--rows', rows);
+    }
     vacio.style.display = lista.length ? 'none' : 'block';
   }
 
   function quitar(vr, ts) {
     var antes = board_ultimo && board_ultimo[vr] && board_ultimo[vr].done || null;
-    http('PUT', DB + '/board/' + encodeURIComponent(vr) + '/done.json', Date.now(), function (ok) {
+    var done = Math.max(Date.now(), Number(ts) + 1 || 0); // el reloj de este PC puede ir atrasado respecto al de ODM: done siempre >= ts
+    http('PUT', DB + '/board/' + encodeURIComponent(vr) + '/done.json', done, function (ok) {
       if (!ok) { aviso('No se pudo marcar. Reintenta.'); return; }
-      if (board_ultimo && board_ultimo[vr]) board_ultimo[vr].done = Date.now();
+      if (board_ultimo && board_ultimo[vr]) board_ultimo[vr].done = done;
       pintar(board_ultimo); marcar();
       deshacer = { vr: vr, antes: antes };
       aviso('Quitado ' + (board_ultimo[vr] ? board_ultimo[vr].door : ''), true);
     });
   }
   var board_ultimo = null, toastT = null;
+  if (/[?&]demo=1/.test(location.search)) window.__pintar = pintar; // solo pruebas: pintar un board de ejemplo desde la consola
+  // ---- Sonido al aparecer un aviso nuevo (WebAudio; el navegador exige un toque en la pagina tras cada carga) ----
+  var audioCtx = null, sonidoOn = true; // siempre con sonido (solo se apaga a mano con el boton)
+  try { sonidoOn = localStorage.getItem('salidas_sonido') !== '0'; } catch (e) {}
+  var btnSonido = document.getElementById('btnSonido');
+  var capa = document.getElementById('capaSonido');
+  function pintarSonido() {
+    capa.style.display = (sonidoOn && !(audioCtx && audioCtx.state === 'running')) ? 'flex' : 'none';
+    btnSonido.className = sonidoOn ? (audioCtx && audioCtx.state === 'running' ? 'on' : 'pide') : '';
+    btnSonido.innerHTML = sonidoOn ? (audioCtx && audioCtx.state === 'running' ? '&#128266; Sonido ON' : '&#128266; Toca para activar el sonido') : '&#128263; Sonido OFF';
+  }
+  function activarAudio() {
+    if (!sonidoOn) return;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state !== 'running') audioCtx.resume().then(pintarSonido, pintarSonido);
+    } catch (e) {}
+    pintarSonido();
+  }
+  function tono(t0, f, dur) {
+    var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.6, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function sonar() {
+    if (!sonidoOn || !audioCtx || audioCtx.state !== 'running') return;
+    try { var t = audioCtx.currentTime; tono(t, 880, 0.35); tono(t + 0.4, 1175, 0.35); tono(t + 0.8, 880, 0.35); tono(t + 1.2, 1175, 0.6); } catch (e) {}
+  }
+  btnSonido.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (!sonidoOn || (audioCtx && audioCtx.state === 'running')) sonidoOn = !sonidoOn; // 1er toque: activa; si ya suena, apaga
+    try { localStorage.setItem('salidas_sonido', sonidoOn ? '1' : '0'); } catch (e) {}
+    activarAudio(); if (sonidoOn && audioCtx) setTimeout(sonar, 150);
+  });
+  document.addEventListener('pointerdown', function () { if (sonidoOn && !(audioCtx && audioCtx.state === 'running')) { activarAudio(); setTimeout(pintarSonido, 300); } }, true);
+  capa.addEventListener('click', function () { activarAudio(); setTimeout(pintarSonido, 300); });
+  pintarSonido();
+
   function aviso(t, conDeshacer) {
     var el = document.getElementById('toast');
     el.innerHTML = esc(t) + (conDeshacer ? '<button id="undo">Deshacer</button>' : '');
