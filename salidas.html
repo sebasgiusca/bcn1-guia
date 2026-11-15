@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Salidas BCN1</title>
+<title>EXIT BCN1</title>
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#0b1220;color:#fff;font-family:Arial,Helvetica,sans-serif}
@@ -36,7 +36,10 @@
   
   .card.viejo{border-color:#e74c3c}.card.viejo .cuando{color:#ff8a80}
   button.quitar{width:100%;font-size:20px;padding:12px;border:0;border-radius:10px;background:#2ecc71;color:#06280f;font-weight:bold;cursor:pointer}
-  #vacio{text-align:center;color:#6c7fa8;font-size:34px;margin-top:12vh}
+  #vacio{text-align:center;color:#6c7fa8;font-size:34px;margin-top:6vh}
+  #vacio svg{width:min(70vw,900px);height:auto;display:block;margin:0 auto 2vh;opacity:.9;animation:flota 6s ease-in-out infinite}
+  @keyframes flota{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  #vacio .txt{opacity:.85}
   #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;display:none;font-size:16px}
   #toast button{margin-left:12px;padding:4px 10px;border:0;border-radius:6px;background:#ff9900;cursor:pointer;font-weight:bold}
   #anunciar{display:flex;gap:10px;margin:0 0 20px}
@@ -72,7 +75,7 @@
 </head>
 <body>
 <header>
-  <h1>Salidas <b>BCN1</b><small id="modo"></small></h1>
+  <h1>EXIT <b>BCN1</b><small id="modo"></small></h1>
   <div id="estado"><button id="btnSonido" type="button" title="Sonido al aparecer un aviso">&#128264; Sonido</button><span id="punto"></span><span id="txt">Conectando...</span></div>
 </header>
 <main>
@@ -85,7 +88,24 @@
   </details>
   <div id="capaSonido" style="display:none"><div>&#128266;<br>Toca la pantalla para activar el sonido</div></div>
   <div id="grid"></div>
-  <div id="vacio" style="display:none">Sin salidas pendientes</div>
+  <div id="vacio" style="display:none">
+    <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="40" y="60" width="560" height="170" rx="10" fill="#1d2d52" stroke="#3b5390" stroke-width="6"/>
+      <rect x="40" y="200" width="560" height="22" fill="#ff9900"/>
+      <text x="320" y="165" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="110" fill="#ffffff" letter-spacing="8">ATS</text>
+      <text x="320" y="88" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="26" fill="#9fb3dd">BCN1</text>
+      <rect x="610" y="118" width="40" height="112" fill="#1d2d52" stroke="#3b5390" stroke-width="6"/>
+      <path d="M650 230 V120 q0-30 30-30 h110 q25 0 40 20 l40 55 q8 12 8 28 v37 z" fill="#2b3d66" stroke="#3b5390" stroke-width="6"/>
+      <path d="M700 108 h88 q14 0 22 12 l32 44 h-142 z" fill="#8fb3ff" opacity=".85"/>
+      <rect x="650" y="208" width="228" height="22" fill="#ff9900"/>
+      <rect x="40" y="230" width="840" height="6" fill="#3b5390"/>
+      <g fill="#0b1220" stroke="#6c7fa8" stroke-width="8">
+        <circle cx="130" cy="245" r="30"/><circle cx="210" cy="245" r="30"/><circle cx="690" cy="245" r="30"/><circle cx="820" cy="245" r="30"/>
+      </g>
+      <g fill="#6c7fa8"><circle cx="130" cy="245" r="10"/><circle cx="210" cy="245" r="10"/><circle cx="690" cy="245" r="10"/><circle cx="820" cy="245" r="10"/></g>
+    </svg>
+    <div class="txt">Sin salidas pendientes</div>
+  </div>
 </main>
 <div id="toast"></div>
 <script>
