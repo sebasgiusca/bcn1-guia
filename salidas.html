@@ -107,6 +107,8 @@
   document.getElementById('modo').textContent = tv ? 'pantalla' : 'clerk';
 
   var okTs = 0, bootTs = Date.now(), visto = {}, primera = true, deshacer = null;
+  var desfase = 0; // reloj del servidor - reloj de este PC (cabecera Date de la propia pagina, misma origen); los ts del board los pone otro PC
+  function ahora() { return Date.now() + desfase; }
   var grid = document.getElementById('grid'), vacio = document.getElementById('vacio');
   var punto = document.getElementById('punto'), txt = document.getElementById('txt');
 
@@ -129,7 +131,7 @@
   function hora(ts) { var d = new Date(ts); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
 
   function pintar(board) {
-    var now = Date.now(), lista = [];
+    var now = ahora(), lista = [];
     Object.keys(board || {}).forEach(function (vr) {
       var b = board[vr];
       if (!b || typeof b.door !== 'string' || !b.door) return;
@@ -168,7 +170,7 @@
 
   function quitar(vr, ts) {
     var antes = board_ultimo && board_ultimo[vr] && board_ultimo[vr].done || null;
-    var done = Math.max(Date.now(), Number(ts) + 1 || 0); // el reloj de este PC puede ir atrasado respecto al de ODM: done siempre >= ts
+    var done = Math.max(ahora(), Number(ts) + 1 || 0); // el reloj de este PC puede ir atrasado respecto al de ODM: done siempre >= ts
     http('PUT', DB + '/board/' + encodeURIComponent(vr) + '/done.json', done, function (ok) {
       if (!ok) { aviso('No se pudo marcar. Reintenta.'); return; }
       if (board_ultimo && board_ultimo[vr]) board_ultimo[vr].done = done;
@@ -238,12 +240,12 @@
 
   function enPantalla(v) {
     var ya = false;
-    Object.keys(board_ultimo || {}).forEach(function (k) { var b = board_ultimo[k]; if (b && b.door === v && !(b.done && b.done >= b.ts) && Date.now() - b.ts < MAX_AGE) ya = true; });
+    Object.keys(board_ultimo || {}).forEach(function (k) { var b = board_ultimo[k]; if (b && b.door === v && !(b.done && b.done >= b.ts) && ahora() - b.ts < MAX_AGE) ya = true; });
     return ya;
   }
   function enviar(v, hint, despues) {
     if (enPantalla(v)) { hint.textContent = v + ' ya esta en pantalla'; return; }
-    var now = Date.now(), id = 'M' + now + Math.random().toString(36).slice(2, 6);
+    var now = ahora(), id = 'M' + now + Math.random().toString(36).slice(2, 6);
     http('PUT', DB + '/board/' + id + '.json', { door: v, ts: now }, function (ok) {
       if (!ok) { hint.textContent = 'No se pudo enviar. Reintenta.'; return; }
       hint.textContent = 'Enviado: ' + v; if (despues) despues(); leer();
@@ -304,9 +306,39 @@
     else { punto.className = 'mal'; txt.textContent = okTs ? 'SIN CONEXIÓN desde hace ' + seg + ' s' : 'Sin conexión con Firebase'; }
     var escribiendo = !tv && document.getElementById('muelle').value;
     var sinDatos = okTs ? Date.now() - okTs : Date.now() - bootTs;
-    if (sinDatos > (tv ? 90000 : 240000) && !escribiendo && !seleccion) location.reload();
-    if (Date.now() - bootTs > 12 * 3600 * 1000) location.reload();
+    if (sinDatos > (tv ? 90000 : 240000) && !escribiendo && !seleccion) recargar('sin datos');
+    if (Date.now() - bootTs > 12 * 3600 * 1000) recargar('12 h');
   }
+  // Recarga segura: nunca con avisos en pantalla (perderia el sonido activado y el clerk veria parpadear),
+  // y solo si la propia pagina responde (si la red esta caida, recargar dejaria a Firefox en una pagina de error).
+  var recargando = 0, etag0 = null;
+  function recargar(motivo) {
+    if (document.body.classList.contains('ocupado')) return;
+    if (recargando && Date.now() - recargando < 60000) return;
+    recargando = Date.now();
+    try {
+      var x = new XMLHttpRequest();
+      x.open('HEAD', location.pathname + '?ping=' + Date.now(), true); x.timeout = 8000;
+      x.onreadystatechange = function () { if (x.readyState === 4 && x.status >= 200 && x.status < 300) location.reload(); };
+      x.send();
+    } catch (e) {}
+  }
+  // Version nueva publicada: cada 10 min se mira el ETag de la pagina; si cambia, se recarga cuando no haya avisos.
+  function comprobarVersion() {
+    try {
+      var x = new XMLHttpRequest();
+      x.open('HEAD', location.pathname + '?v=' + Date.now(), true); x.timeout = 8000;
+      x.onreadystatechange = function () {
+        if (x.readyState !== 4 || x.status < 200 || x.status >= 300) return;
+        try { var dh = x.getResponseHeader('Date'); if (dh) { var sv = Date.parse(dh); if (isFinite(sv) && Math.abs(sv - Date.now()) > 20000) desfase = sv - Date.now(); else desfase = 0; } } catch (e) {}
+        var et = x.getResponseHeader('ETag') || x.getResponseHeader('Last-Modified') || '';
+        if (!et) return;
+        if (etag0 === null) etag0 = et; else if (et !== etag0) recargar('version nueva');
+      };
+      x.send();
+    } catch (e) {}
+  }
+  setInterval(comprobarVersion, 10 * 60 * 1000); comprobarVersion();
   try {
     window.addEventListener('online', function () { leer(); });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) leer(); });
