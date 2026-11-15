@@ -125,21 +125,23 @@
       if (!b || typeof b.door !== 'string' || !b.door) return;
       var ts = Number(b.ts); // board se escribe sin auth: solo ts numerico (evita NaN e inyeccion en data-ts)
       if (!isFinite(ts) || ts <= 0) return;
-      if (now - ts > MAX_AGE) return;
+      // 1.14.16: 'shown' = cuando la tarjeta aparecio de verdad (llegada de la tractora); el tiempo y el parpadeo cuentan desde ahi
+      var shown = Number(b.shown), ref = (isFinite(shown) && shown >= ts) ? shown : ts;
+      if (now - ref > MAX_AGE) return;
       if (b.done && b.done >= ts) return;
-      lista.push({ vr: vr, door: b.door, ts: ts, plate: typeof b.plate === 'string' ? b.plate : '' });
+      lista.push({ vr: vr, door: b.door, ts: ts, ref: ref, plate: typeof b.plate === 'string' ? b.plate : '' });
     });
-    lista.sort(function (a, b) { return a.ts - b.ts; });
+    lista.sort(function (a, b) { return a.ref - b.ref; });
     var html = '', nuevos = 0;
     lista.forEach(function (it) {
-      var min = Math.max(0, Math.round((now - it.ts) / 60000));
+      var min = Math.max(0, Math.round((now - it.ref) / 60000));
       var clave = it.vr + '|' + it.ts, nuevo = !primera && !visto[clave];
       if (nuevo) nuevos++;
       visto[clave] = 1;
-      html += '<div class="card' + (nuevo ? ' nuevo' : '') + (min >= VIEJO_MIN ? ' viejo' : '') + (now - it.ts >= ALERTA_MIN * 60000 ? ' alerta' : '') + '">' +
+      html += '<div class="card' + (nuevo ? ' nuevo' : '') + (min >= VIEJO_MIN ? ' viejo' : '') + (now - it.ref >= ALERTA_MIN * 60000 ? ' alerta' : '') + '">' +
         '<div class="lbl">Muelle</div><div class="num">' + esc(it.door) + '</div>' +
         (it.plate ? '<div class="matr">' + esc(it.plate) + '</div>' : '') +
-        '<div class="cuando">Llamado ' + hora(it.ts) + ' · hace ' + min + ' min</div>' +
+        '<div class="cuando">Llamado ' + hora(it.ref) + ' · hace ' + min + ' min</div>' +
         '<button class="quitar" data-vr="' + esc(it.vr) + '" data-ts="' + esc(it.ts) + '">Ya está</button></div>';
     });
     if (nuevos > 0 && !primera) sonar();
