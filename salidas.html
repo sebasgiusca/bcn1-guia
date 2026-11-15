@@ -339,6 +339,15 @@
     } catch (e) {}
   }
   setInterval(comprobarVersion, 10 * 60 * 1000); comprobarVersion();
+  // Latido (solo modo pantalla): cada 30 s escribe /pantalla/{id} = { ts, v } para que el ODM y el Clerk sepan que la tele esta viva.
+  var EXIT_V = 'EXIT 1.1', latidoId = '';
+  try { latidoId = localStorage.getItem('salidas_id') || ''; } catch (e) {}
+  if (!/^[a-z0-9]{6,16}$/.test(latidoId)) { latidoId = 'tv' + Math.random().toString(36).slice(2, 10); try { localStorage.setItem('salidas_id', latidoId); } catch (e) {} }
+  function latir() {
+    if (!tv) return;
+    http('PUT', DB + '/pantalla/' + latidoId + '.json', { ts: ahora(), v: EXIT_V }, function (ok) { if (!ok) console.warn('latido no escrito'); });
+  }
+  setInterval(latir, 30000); setTimeout(latir, 3000);
   try {
     window.addEventListener('online', function () { leer(); });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) leer(); });
