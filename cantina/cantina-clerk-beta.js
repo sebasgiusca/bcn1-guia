@@ -1,12 +1,12 @@
-// cantina-clerk 2.0.0 (BCN1 Pantalla Cantina, cuerpo para el cargador del ODM Omega; generado por cantina/build.py)
+// cantina-clerk 2.0.1 (BCN1 Pantalla Cantina, cuerpo para el cargador del ODM Omega; generado por cantina/build.py)
 (function () {
   'use strict';
-  // BCN1 Pantalla Cantina 2.0.0 (rol: clerk). Fuente unica cantina/cantina.js; generado por cantina/build.py.
+  // BCN1 Pantalla Cantina 2.0.1 (rol: clerk). Fuente unica cantina/cantina.js; generado por cantina/build.py.
   // lead  = manda (va dentro de la BCN1 Suite): lee YMS y Firebase cada 15 s, escribe /board (tele), /bells (colores), /diag, limpieza.
   // clerk = ligero (script aparte o modulo del ODM Omega): nada de fondo; escribe solo al pulsar la campanilla o al dar Finalizar;
   //         lee /bells cada 3 min para los colores y coge el mando de emergencia si no hay lead en 3 min.
   const ROL = 'clerk';
-  const VERSION = '2.0.0';
+  const VERSION = '2.0.1';
   const FB = 'https://tom-yard-default-rtdb.europe-west1.firebasedatabase.app';
   const KEY = 'TF5K5U18a2tA15Rvhabph8VjytAjldqHm0dNK4dM';
   const LEAD = ROL === 'lead';
@@ -164,8 +164,37 @@
     }).then(() => {
       mandoBusy = 0;
       if (mando.tengo !== antes) console.log('[Cantina] mando: ' + (mando.tengo ? 'ESTA pestana manda (' + ROL + ')' : 'otra pestana manda'));
+      vigilarPantalla();
     });
   }
+
+  // ---------- vigilancia de la tele: /pantalla/{id} = { ts, v } lo escribe salidas.html cada 30 s ----------
+  // Si el ultimo latido tiene mas de PANTALLA_MAX_MS (o no hay ninguno), franja roja arriba en el ODM y el YMS:
+  // los camioneros no estan viendo las llamadas. Se lee con el mando (lead 20 s, clerk 3 min, YMS con leerConfig).
+  const PANTALLA_MAX_MS = 120000;
+  const pantalla = { ts: 0, v: '', leida: 0 };
+  try { PW.__cantinaPantalla = pantalla; } catch (e) {}
+  function vigilarPantalla() {
+    return get('pantalla').then(p => {
+      pantalla.leida = Date.now(); pantalla.ts = 0; pantalla.v = '';
+      Object.keys(p || {}).forEach(k => { const e = p[k]; if (e && typeof e.ts === 'number' && e.ts > pantalla.ts) { pantalla.ts = e.ts; pantalla.v = String(e.v || ''); } });
+      pintarFranjaPantalla();
+    }).catch(() => {});
+  }
+  function pintarFranjaPantalla() {
+    const sinSenal = pantalla.leida && (Date.now() - pantalla.ts) > PANTALLA_MAX_MS;
+    let f = document.getElementById('cantina-franja-pantalla');
+    if (!sinSenal) { if (f) f.remove(); return; }
+    if (!f) {
+      f = document.createElement('div'); f.id = 'cantina-franja-pantalla';
+      f.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483645;background:#b0001f;color:#fff;text-align:center;padding:8px 12px;font:bold 15px/1.3 Arial,sans-serif;box-shadow:0 3px 12px rgba(0,0,0,.4);cursor:pointer;';
+      f.title = 'Pulsa para ocultar 10 min';
+      f.addEventListener('click', () => { f.style.display = 'none'; setTimeout(() => { if (f.isConnected) f.style.display = ''; }, 600000); });
+      (document.body || document.documentElement).appendChild(f);
+    }
+    f.textContent = 'PANTALLA CANTINA SIN SENAL' + (pantalla.ts ? ' desde las ' + hhmm(pantalla.ts) : ' (nunca ha dado senal)') + ': los camioneros NO ven las llamadas. Comprueba la tele de la cantina.';
+  }
+  setInterval(pintarFranjaPantalla, 30000);
   const tengoMando = () => mando.activo && mando.tengo;
   try { window.addEventListener('pagehide', () => { if (mando.tengo) del('lider/odm'); }); } catch (e) {}
 
