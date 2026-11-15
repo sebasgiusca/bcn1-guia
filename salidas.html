@@ -10,8 +10,6 @@
   body{background:transparent;position:relative;z-index:0}
   #fondo{position:fixed;inset:0;z-index:-2;overflow:hidden;background:#0b1220}
   #fondo div{position:absolute;inset:0;background:url(exit1.jpg) center/cover no-repeat}
-  #camion{position:absolute;left:0;bottom:3vh;width:min(58vw,1200px);filter:drop-shadow(0 14px 18px rgba(0,0,0,.55));transform:translateX(-120%);animation:pasa 14s linear infinite;will-change:transform}
-  @keyframes pasa{0%{transform:translateX(-120%)}64%{transform:translateX(calc(100vw + 10%))}100%{transform:translateX(calc(100vw + 10%))}}
   #fondo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,10,24,.55) 0,rgba(5,10,24,.05) 30%,rgba(5,10,24,.1) 70%,rgba(5,10,24,.75) 100%);}
   body.ocupado #fondo{display:none}
   header{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:#111a2e;border-bottom:3px solid #ff9900}
@@ -80,7 +78,7 @@
 </style>
 </head>
 <body>
-<div id="fondo"><div></div><img id="camion" src="exit-camion.png" alt=""></div>
+<div id="fondo"><div></div></div>
 <header>
   <h1>EXIT <b>BCN1</b><small id="modo"></small></h1>
   <div id="estado"><button id="btnSonido" type="button" title="Sonido al aparecer un aviso">&#128264; Sonido</button><span id="punto"></span><span id="txt">Conectando...</span></div>
