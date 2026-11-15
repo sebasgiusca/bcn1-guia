@@ -9,10 +9,7 @@
   html{background:#0b1220}html,body{margin:0;height:100%;color:#fff;font-family:Arial,Helvetica,sans-serif}
   body{background:transparent;position:relative;z-index:0}
   #fondo{position:fixed;inset:0;z-index:-2;overflow:hidden;background:#0b1220}
-  #fondo div{position:absolute;inset:0;background:center/cover no-repeat;opacity:0;transition:opacity 2.5s ease;animation:zoom 40s ease-in-out infinite alternate}
-  #fondo div.on{opacity:1}
-  #fondo div:nth-child(1){background-image:url(exit1.jpg)}
-  #fondo div:nth-child(2){background-image:url(exit2.jpg);animation-delay:-20s}
+  #fondo div{position:absolute;inset:0;background:url(exit1.jpg) center/cover no-repeat;animation:zoom 40s ease-in-out infinite alternate}
   @keyframes zoom{from{transform:scale(1)}to{transform:scale(1.08)}}
   #fondo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,10,24,.55) 0,rgba(5,10,24,.05) 30%,rgba(5,10,24,.1) 70%,rgba(5,10,24,.75) 100%);}
   body.ocupado #fondo{display:none}
@@ -82,7 +79,7 @@
 </style>
 </head>
 <body>
-<div id="fondo"><div class="on"></div><div></div></div>
+<div id="fondo"><div></div></div>
 <header>
   <h1>EXIT <b>BCN1</b><small id="modo"></small></h1>
   <div id="estado"><button id="btnSonido" type="button" title="Sonido al aparecer un aviso">&#128264; Sonido</button><span id="punto"></span><span id="txt">Conectando...</span></div>
@@ -108,7 +105,6 @@
   var POLL_MS = 5000, MAX_AGE = 2 * 3600 * 1000, VIEJO_MIN = 15, ALERTA_MIN = 3, ultimoHtml = '';
   var tv = /[?&]tv=1/.test(location.search);
   if (tv) document.body.classList.add('tv');
-  (function(){var f=document.querySelectorAll('#fondo div'),i=0;setInterval(function(){f[i].classList.remove('on');i=(i+1)%f.length;f[i].classList.add('on');},20000);})();
   document.getElementById('modo').textContent = tv ? 'pantalla' : 'clerk';
 
   var okTs = 0, bootTs = Date.now(), visto = {}, primera = true, deshacer = null;
