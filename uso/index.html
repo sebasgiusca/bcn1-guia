@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>BCN1 Suite - Uso</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root{color-scheme:dark light}
+  body{font:14px/1.4 system-ui,Segoe UI,Arial,sans-serif;background:#10151c;color:#e6edf3;margin:0;padding:20px}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:#9aa7b2;margin-bottom:18px}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+  select,button{background:#1b2430;color:#e6edf3;border:1px solid #30404f;border-radius:8px;padding:7px 10px;font:inherit}
+  button{cursor:pointer}
+  button.active{background:#2d7dd2;border-color:#2d7dd2}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px}
+  .card{background:#1b2430;border:1px solid #2a3542;border-radius:12px;padding:14px}
+  .card h2{font-size:14px;margin:0 0 10px;color:#cfe3ff}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:4px 6px;border-bottom:1px solid #2a3542}
+  th{color:#9aa7b2;font-weight:600}
+  .big{font-size:28px;font-weight:700}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+  .kpi{background:#1b2430;border:1px solid #2a3542;border-radius:12px;padding:12px 14px}
+  .kpi .lbl{color:#9aa7b2;font-size:12px}
+  .err{color:#ff8a8a;background:#2a1a1a;border:1px solid #5a2a2a;border-radius:8px;padding:10px;margin-bottom:14px}
+  .muted{color:#6b7684;font-size:12px}
+  canvas{max-height:280px}
+</style>
+</head>
+<body>
+<h1>BCN1 Suite &middot; quien usa que</h1>
+<div class="sub">Lee directo de Firebase (mismo proyecto que Candados/Radar). No hay nada que instalar: abre este archivo y ya.</div>
+
+<div id="errBox"></div>
+
+<div class="bar">
+  <span>Periodo:</span>
+  <button data-days="1">Hoy</button>
+  <button data-days="7" class="active">7 dias</button>
+  <button data-days="30">30 dias</button>
+  <button data-days="0">Todo</button>
+  <span style="flex:1"></span>
+  <button id="btnReload">Recargar</button>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Eventos por dia</h2>
+    <canvas id="chartDias"></canvas>
+  </div>
+  <div class="card">
+    <h2>Eventos por modulo</h2>
+    <canvas id="chartModulos"></canvas>
+  </div>
+  <div class="card">
+    <h2>Usuarios (login) &middot; total y ultima vez</h2>
+    <table id="tablaUsuarios"><thead><tr><th>Login</th><th>Eventos</th><th>Modulos</th><th>Ultima vez</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="card">
+    <h2>Botones mas usados (filtra por modulo)
+      <select id="selModulo" style="float:right"></select>
+    </h2>
+    <canvas id="chartBotones"></canvas>
+  </div>
+</div>
+
+<p class="muted" id="footInfo"></p>
+
+<script>
+const FB = 'https://tom-yard-default-rtdb.europe-west1.firebasedatabase.app/candados/pc.json';
+let RAW = []; // {login, modulo, accion, ts, extra, day}
+let DAYS = 7;
+let charts = {};
+
+function fmtDay(ts){ const d = new Date(ts); return d.toLocaleDateString('es-ES',{timeZone:'Europe/Madrid',day:'2-digit',month:'2-digit'}); }
+function fmtFull(ts){ return new Date(ts).toLocaleString('es-ES',{timeZone:'Europe/Madrid'}); }
+
+async function load(){
+  const errBox = document.getElementById('errBox');
+  errBox.innerHTML = '';
+  try{
+    const r = await fetch(FB, {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    RAW = [];
+    if (data) {
+      Object.keys(data).forEach(n => {
+        const u = data[n];
+        if (!u || u.state !== 'uso' || !u.uso) return;
+        Object.keys(u.uso).forEach(day => {
+          const dayObj = u.uso[day] || {};
+          Object.keys(dayObj).forEach(k => {
+            const ev = dayObj[k];
+            if (ev && ev.login && ev.modulo) RAW.push(Object.assign({day}, ev));
+          });
+        });
+      });
+    }
+    RAW.sort((a,b) => (a.ts||0) - (b.ts||0));
+    document.getElementById('footInfo').textContent = RAW.length + ' eventos totales guardados. Ultima lectura: ' + new Date().toLocaleTimeString('es-ES');
+    render();
+  } catch(e){
+    errBox.innerHTML = '<div class="err">No se pudo leer Firebase: ' + (e && e.message || e) + '. Si esto es un file:// local, prueba a abrirlo con doble clic (no necesita servidor) o revisa la conexion.</div>';
+  }
+}
+
+function filtered(){
+  if (!DAYS) return RAW;
+  const min = Date.now() - DAYS*24*3600e3;
+  return RAW.filter(e => (e.ts||0) >= min);
+}
+
+function destroy(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+
+function render(){
+  const data = filtered();
+  // KPIs
+  const usuarios = new Set(data.map(e=>e.login));
+  const modulos = new Set(data.map(e=>e.modulo));
+  const dias = new Set(data.map(e=>e.day));
+  document.getElementById('kpis').innerHTML = [
+    ['Eventos', data.length],
+    ['Usuarios activos', usuarios.size],
+    ['Modulos con uso', modulos.size],
+    ['Dias con datos', dias.size],
+  ].map(([lbl,v]) => '<div class="kpi"><div class="big">'+v+'</div><div class="lbl">'+lbl+'</div></div>').join('');
+
+  // Eventos por dia
+  const porDia = {};
+  data.forEach(e => { porDia[e.day] = (porDia[e.day]||0)+1; });
+  const diasOrd = Object.keys(porDia).sort();
+  destroy('dias');
+  charts.dias = new Chart(document.getElementById('chartDias'), {
+    type:'line',
+    data:{labels:diasOrd, datasets:[{label:'Eventos', data:diasOrd.map(d=>porDia[d]), borderColor:'#5bc0ff', backgroundColor:'rgba(91,192,255,.15)', fill:true, tension:.25}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{color:'#9aa7b2'}}, x:{ticks:{color:'#9aa7b2'}}}}
+  });
+
+  // Eventos por modulo
+  const porModulo = {};
+  data.forEach(e => { porModulo[e.modulo] = (porModulo[e.modulo]||0)+1; });
+  const modOrd = Object.keys(porModulo).sort((a,b)=>porModulo[b]-porModulo[a]);
+  destroy('modulos');
+  charts.modulos = new Chart(document.getElementById('chartModulos'), {
+    type:'bar',
+    data:{labels:modOrd, datasets:[{label:'Eventos', data:modOrd.map(m=>porModulo[m]), backgroundColor:'#2d7dd2'}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{color:'#9aa7b2'}}, x:{ticks:{color:'#9aa7b2'}}}}
+  });
+
+  // Tabla usuarios
+  const porUsuario = {};
+  data.forEach(e => {
+    const u = porUsuario[e.login] || (porUsuario[e.login] = {total:0, modulos:new Set(), last:0});
+    u.total++; u.modulos.add(e.modulo); u.last = Math.max(u.last, e.ts||0);
+  });
+  const usOrd = Object.keys(porUsuario).sort((a,b)=>porUsuario[b].total-porUsuario[a].total);
+  document.querySelector('#tablaUsuarios tbody').innerHTML = usOrd.map(u => {
+    const r = porUsuario[u];
+    return '<tr><td>'+u+'</td><td>'+r.total+'</td><td>'+Array.from(r.modulos).join(', ')+'</td><td>'+fmtFull(r.last)+'</td></tr>';
+  }).join('') || '<tr><td colspan="4" class="muted">Sin datos en este periodo</td></tr>';
+
+  // Selector de modulo para botones
+  const sel = document.getElementById('selModulo');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Todos los modulos</option>' + modOrd.map(m=>'<option value="'+m+'">'+m+'</option>').join('');
+  if (modOrd.includes(prev)) sel.value = prev;
+  renderBotones();
+}
+
+function renderBotones(){
+  const data = filtered().filter(e => e.accion === 'clic' && e.extra);
+  const modSel = document.getElementById('selModulo').value;
+  const d2 = modSel ? data.filter(e=>e.modulo===modSel) : data;
+  const porBoton = {};
+  d2.forEach(e => { const k = (modSel?'':e.modulo+' / ')+e.extra; porBoton[k] = (porBoton[k]||0)+1; });
+  const ord = Object.keys(porBoton).sort((a,b)=>porBoton[b]-porBoton[a]).slice(0,15);
+  destroy('botones');
+  charts.botones = new Chart(document.getElementById('chartBotones'), {
+    type:'bar',
+    data:{labels:ord, datasets:[{label:'Clics', data:ord.map(b=>porBoton[b]), backgroundColor:'#f0b429'}]},
+    options:{indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, ticks:{color:'#9aa7b2'}}, y:{ticks:{color:'#9aa7b2'}}}}
+  });
+}
+
+document.querySelectorAll('.bar button[data-days]').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.bar button[data-days]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    DAYS = +b.dataset.days;
+    render();
+  });
+});
+document.getElementById('btnReload').addEventListener('click', load);
+document.getElementById('selModulo').addEventListener('change', renderBotones);
+
+load();
+</script>
+</body>
+</html>
