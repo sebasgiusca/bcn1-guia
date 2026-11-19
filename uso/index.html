@@ -30,6 +30,7 @@ td.z{color:#4a5563}
  <span>Periodo:</span>
  <button data-d="1">Hoy</button><button data-d="7" class="active">7 dias</button><button data-d="30">30 dias</button><button data-d="0">Todo</button>
  <span style="flex:1"></span><button id="rel">Recargar</button></div>
+<div class="card"><h2>Mejoras con Quick</h2><button id="qk">Pedir mejoras a Quick (copia los datos y abre Quick)</button> <span class="muted" id="qkm"></span></div>
 <div id="out"></div>
 <p class="muted" id="foot"></p>
 <script>
@@ -81,5 +82,17 @@ function render(){
  } else h=userTable(ev.filter(e=>e.modulo===TAB),TAB);
  document.getElementById('out').innerHTML=h}
 document.querySelectorAll('#per button[data-d]').forEach(b=>b.onclick=()=>{document.querySelectorAll('#per button[data-d]').forEach(x=>x.classList.remove('active'));b.classList.add('active');DAYS=+b.dataset.d;render()});
+
+function resumenTxt(){
+ const ev=data();let t='';
+ MODS.slice(1).forEach(([k,n])=>{const e2=ev.filter(e=>e.modulo===k);if(!e2.length)return;
+  const us={},ac={};e2.forEach(e=>{const u=us[e.login]||(us[e.login]={abre:0,a:{}});if(e.accion==='carga')u.abre++;else if(e.extra){u.a[e.extra]=(u.a[e.extra]||0)+1;ac[e.extra]=(ac[e.extra]||0)+1}});
+  t+='\n## '+n+'\n';Object.keys(us).forEach(l=>{t+='- '+l+': abre '+us[l].abre+' veces; botones: '+(Object.entries(us[l].a).map(([a,c])=>a+' x'+c).join(', ')||'ninguno')+'\n'});
+  t+='Botones mas usados: '+(Object.entries(ac).sort((a,b)=>b[1]-a[1]).map(([a,c])=>a+' x'+c).join(', ')||'ninguno')+'\n'});
+ return t||'\n(sin datos)\n'}
+document.getElementById('qk').onclick=async()=>{
+ const p='Eres analista de producto. Tengo unos userscripts (BCN1 Suite: Investigador FMC para investigar y publicar reportes de camiones tarde en Relay, PerfectMile para comentarios semanales, Yard Health para el informe por correo, ODM/YMS). Estos son los datos de uso de los ultimos '+(DAYS||'todos los')+' dias por usuario. Dime en espanol: 1) que herramientas y botones se usan poco o nada y por que puede ser, 2) donde hay usuarios que miran pero no completan la accion (por ejemplo investigan pero no publican) y que cambiaria para que lo hagan, 3) las 5 mejoras concretas que haria, ordenadas por impacto. Se breve y concreto.\n'+resumenTxt();
+ try{await navigator.clipboard.writeText(p);document.getElementById('qkm').textContent='Copiado. Se abre Quick: pega con Ctrl+V.'}catch(e){document.getElementById('qkm').textContent='No pude copiar; abre Quick y pega a mano.'}
+ window.open('https://us-east-1.quicksight.aws.amazon.com/sn/account/amazonbi','_blank')};
 document.getElementById('rel').onclick=load;load();
 </script></body></html>
