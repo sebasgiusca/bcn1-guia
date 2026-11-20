@@ -37,7 +37,12 @@ td.z{color:#4a5563}
 const FB='https://tom-yard-default-rtdb.europe-west1.firebasedatabase.app/candados/pc.json';
 const MODS=[['resumen','Resumen'],['outlook','Correo (Yard Health)'],['investigador','Investigador'],['perfectmile','PerfectMile'],['yardhealth_o_cantina','YMS'],['odm','ODM']];
 // accion "mira" y accion "hace" por herramienta para detectar quien mira pero no actua
-const EMBUDO={investigador:{mira:['Investigar'],hace:['Publicar en Relay'],txt:['investiga','publica en Relay']}};
+const EMBUDO={investigador:{mira:['Investigar'],hace:['Publicar en Relay'],txt:['investiga','publica en Relay']},
+ outlook:{mira:['Generar EOS desde YMS, FCLM y FMC (Mayus'],hace:['Abrir el borrador'],txt:['genera el EOS','abre el borrador del correo']}};
+// botones que significan USO REAL (no solo que el script se abra al entrar en la pagina)
+const REAL={investigador:['Investigar','Generar comentario','Publicar en Relay'],outlook:['Generar EOS desde YMS, FCLM y FMC (Mayus','Abrir el borrador','Cargar o editar el plan semanal de camio'],perfectmile:['📋 Rellenar todo','Aplicar','Aplicar todas','Rellenar'],yardhealth_o_cantina:[],odm:[]};
+const RUIDO=/^(Entendido|Cerrar panel|Cerrar|✕ CERRAR|Actualizar ahora|⬆ Actualizar ahora|Cancelar)$/;
+function realCount(a,mod){const R=REAL[mod]||[];return Object.entries(a).reduce((n,[k,v])=>n+(R.some(r=>k.startsWith(r))?v:0),0)}
 let RAW=[],DAYS=7,TAB='resumen';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=t=>new Date(t).toLocaleString('es-ES',{timeZone:'Europe/Madrid',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
@@ -54,14 +59,14 @@ function userTable(ev,mod){
   if(e.accion==='carga')u.abre++;else if(e.accion==='clic'&&e.extra){u.clics++;u.a[e.extra]=(u.a[e.extra]||0)+1;acts[e.extra]=(acts[e.extra]||0)+1}
   u.last=Math.max(u.last,e.ts||0)});
  const L=Object.keys(users).sort((a,b)=>(users[b].abre+users[b].clics)-(users[a].abre+users[a].clics));
- const A=Object.keys(acts).sort((a,b)=>acts[b]-acts[a]);
+ const A=Object.keys(acts).filter(a=>!RUIDO.test(a)).sort((a,b)=>acts[b]-acts[a]);
  let h='';
  const em=EMBUDO[mod];
  if(em&&L.length){const solo=L.filter(l=>em.mira.some(m=>users[l].a[m])&&!em.hace.some(m=>users[l].a[m]));
   const si=L.filter(l=>em.hace.some(m=>users[l].a[m]));
   if(solo.length)h+='<div class="warn"><b>Miran pero no '+em.txt[1]+':</b> '+solo.map(esc).join(', ')+'</div>';
   if(si.length)h+='<div class="ok"><b>Si '+em.txt[1]+':</b> '+si.map(esc).join(', ')+'</div>';}
- h+='<div class="card"><h2>Quien lo usa</h2>'+(L.length?'<table><tr><th>Login</th><th>Veces que abre</th><th>Clics</th><th>Ultima vez</th></tr>'+L.map(l=>'<tr><td>'+esc(l)+'</td><td class="n">'+users[l].abre+'</td><td class="n">'+users[l].clics+'</td><td>'+fmt(users[l].last)+'</td></tr>').join('')+'</table>':'<span class="muted">Sin datos en este periodo</span>')+'</div>';
+ h+='<div class="card"><h2>Quien lo usa</h2>'+(L.length?'<table><tr><th>Login</th><th>Se le abre (entra en la pagina)</th><th>Uso real (acciones)</th><th>Veredicto</th><th>Ultima vez</th></tr>'+L.map(l=>{const r=realCount(users[l].a,mod);const v=r>=5?'<b style="color:#7dde9c">Lo usa</b>':r>0?'<span style="color:#ffd27a">Lo prueba poco</span>':'<span style="color:#ff8a8a">Solo se le abre</span>';return '<tr><td>'+esc(l)+'</td><td class="n">'+users[l].abre+'</td><td class="n"><b>'+r+'</b></td><td>'+v+'</td><td>'+fmt(users[l].last)+'</td></tr>'}).join('')+'</table><div class="muted" style="margin-top:6px">Uso real = pulsar botones que hacen algo ('+esc((REAL[mod]||[]).join(', ')||'ninguno definido')+'). Se le abre = el script arranca solo al entrar en la pagina; eso no cuenta como uso.</div>':'<span class="muted">Sin datos en este periodo</span>')+'</div>';
  if(A.length){const mx=acts[A[0]];
   h+='<div class="card"><h2>Que botones usa cada uno (quien pulsa que)</h2><table><tr><th>Boton</th><th>Total</th>'+L.map(l=>'<th>'+esc(l)+'</th>').join('')+'</tr>'+
   A.map(a=>'<tr><td>'+esc(a)+'</td><td class="n"><b>'+acts[a]+'</b> <span class="bw" style="width:'+Math.round(acts[a]/mx*80)+'px"></span></td>'+L.map(l=>{const v=users[l].a[a]||0;return '<td class="n'+(v?'':' z')+'">'+v+'</td>'}).join('')+'</tr>').join('')+'</table></div>';}
@@ -74,10 +79,10 @@ function render(){
  if(TAB==='resumen'){
   const us=new Set(ev.map(e=>e.login));
   h+='<div class="kp"><div class="k"><b>'+us.size+'</b><span>usuarios</span></div><div class="k"><b>'+ev.length+'</b><span>eventos</span></div></div>';
-  h+='<div class="card"><h2>Herramienta x usuario (veces que abre + clics)</h2>';
+  h+='<div class="card"><h2>Herramienta x usuario: uso real / veces que se le abre</h2>';
   const U=[...us].sort();
   h+=U.length?'<table><tr><th>Herramienta</th>'+U.map(u=>'<th>'+esc(u)+'</th>').join('')+'<th>Total</th></tr>'+
-   MODS.slice(1).map(([k,n])=>{const e2=ev.filter(e=>e.modulo===k);return '<tr><td>'+n+'</td>'+U.map(u=>{const c=e2.filter(e=>e.login===u).length;return '<td class="n'+(c?'':' z')+'">'+c+'</td>'}).join('')+'<td class="n"><b>'+e2.length+'</b></td></tr>'}).join('')+'</table>':'<span class="muted">Sin datos en este periodo</span>';
+   MODS.slice(1).map(([k,n])=>{const e2=ev.filter(e=>e.modulo===k);return '<tr><td>'+n+'</td>'+U.map(u=>{const e3=e2.filter(e=>e.login===u);const ab=e3.filter(e=>e.accion==='carga').length;const a={};e3.forEach(e=>{if(e.extra)a[e.extra]=(a[e.extra]||0)+1});const r=realCount(a,k);return '<td class="n'+(ab||r?'':' z')+'">'+(r?'<b style="color:#7dde9c">'+r+'</b>':'<span style="color:#ff8a8a">0</span>')+' / '+ab+'</td>'}).join('')+'<td class="n"><b>'+e2.filter(e=>e.accion==='carga').length+'</b></td></tr>'}).join('')+'</table>':'<span class="muted">Sin datos en este periodo</span>';
   h+='</div>';
  } else h=userTable(ev.filter(e=>e.modulo===TAB),TAB);
  document.getElementById('out').innerHTML=h}
