@@ -105,8 +105,8 @@ function render(){
   const U=[...us].sort();
   MODS.slice(1).forEach(([k,n])=>{const e2=ev.filter(e=>e.modulo===k);if(!e2.length)return;
    h+='<div class="card"><h2>'+n+'</h2><div class="kp" style="margin:0">'+U.map(u=>{const e3=e2.filter(e=>e.login===u);const ab=e3.filter(e=>e.accion==='carga').length;const a={};e3.forEach(e=>{if(e.accion==='clic'&&e.extra)a[e.extra]=(a[e.extra]||0)+1});const r=realCount(a,k);
-    const col=r>=5?'#7dde9c':r>0?'#ffd27a':'#ff8a8a';return '<div class="k" style="min-width:110px;text-align:center"><b style="color:'+(ab||r?col:'#4a5563')+'">'+r+'</b><span>'+(ab?ab+' veces abierto':'no la abre')+'</span><div style="margin-top:6px;font-weight:600">'+esc(u)+'</div></div>'}).join('')+
-   '</div><div class="muted" style="margin-top:8px">Numero grande = uso real (botones que hacen algo). Debajo, cuantas veces se le abre al entrar en la pagina.</div></div>'});
+    const col=r>=5?'#7dde9c':r>0?'#ffd27a':'#ff8a8a';return '<div class="k" style="min-width:110px;text-align:center"><div style="margin-bottom:6px;font-weight:600">'+esc(u)+'</div><b style="color:'+(ab||r?col:'#4a5563')+'">'+r+'</b><span>'+(ab?ab+' veces abierto':'no la abre')+'</span></div>'}).join('')+
+   '</div><div class="muted" style="margin-top:8px">Debajo de cada nombre: uso real (botones que hacen algo) y cuantas veces se le abre al entrar en la pagina.</div></div>'});
   if(!U.length)h+='<div class="card"><span class="muted">Sin datos en este periodo</span></div>';
  } else {h=userTable(ev.filter(e=>e.modulo===TAB),TAB);if(TAB==='investigador')h+=vridCard(ev.filter(e=>e.modulo==='investigador'));}
  document.getElementById('out').innerHTML=h}
